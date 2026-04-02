@@ -1,42 +1,112 @@
-from models import Observation, Action
+from typing import List, Tuple
+from models import Email, Observation, Action, StepResult
 from graders import grade_easy, grade_medium, grade_hard
 
 class EmailEnv:
-
-    def __init__(self, task="easy"):
+    def __init__(self, task: str = "hard", max_steps: int = 8):
         self.task = task
-        self.step_count = 0
-        self.done = False
+        self.max_steps = max_steps
+        self.reset()
 
-    def reset(self):
-        self.step_count = 0
-        self.done = False
+    def _seed_emails(self) -> List[Email]:
+        return [
+            Email(
+                email_id=1,
+                subject="Production server down",
+                body="Prod is down. Fix ASAP.",
+                sender_role="boss",
+                expected_priority="urgent",
+                requires_escalation=True
+            ),
+            Email(
+                email_id=2,
+                subject="Invoice clarification",
+                body="Need details on last invoice.",
+                sender_role="client",
+                expected_priority="normal",
+                requires_escalation=False
+            ),
+            Email(
+                email_id=3,
+                subject="Minor UI bug",
+                body="Alignment issue on mobile.",
+                sender_role="client",
+                expected_priority="low",
+                requires_escalation=False
+            ),
+        ]
 
-        self.current_email = Observation(
-            email_id=1,
-            subject="Server Down",
-            body="Production server is down. Fix ASAP.",
-            sender_role="boss"
+    def reset(self) -> Observation:
+        self.queue: List[Email] = self._seed_emails()
+        self.current = self.queue.pop(0) if self.queue else None
+        self.steps = 0
+        self.done = False
+        self.history: List[str] = []
+        self.total_reward = 0.0
+        return self._obs(last_action=None)
+
+    def _obs(self, last_action: str | None) -> Observation:
+        return Observation(
+            current=self.current,
+            queue_size=len(self.queue) + (1 if self.current else 0),
+            last_action=last_action,
+            history=self.history[-6:]
         )
-        return self.current_email
 
-    def step(self, action: Action):
-        self.step_count += 1
-
+    def _grade(self, action: Action) -> Tuple[float, str]:
+        if not self.current:
+            return 0.0, "no email"
         if self.task == "easy":
-            reward = grade_easy(action)
-        elif self.task == "medium":
-            reward = grade_medium(action)
-        else:
-            reward = grade_hard(action)
+            return grade_easy(self.current, action)
+        if self.task == "medium":
+            return grade_medium(self.current, action)
+        return grade_hard(self.current, action)
 
-        if self.step_count >= 3:
+    def _advance(self):
+        # move to next email
+        self.current = self.queue.pop(0) if self.queue else None
+        if not self.current:
             self.done = True
 
-        return self.current_email, reward, self.done, {}
-    
+    def step(self, action: Action) -> StepResult:
+        if self.done:
+            return StepResult(observation=self._obs("noop"), reward=0.0, done=True, info={})
+
+        self.steps += 1
+        score, reason = self._grade(action)
+
+        # trajectory shaping
+        reward = score
+        if action.action_type == "next":
+            reward -= 0.2  # discourage skipping
+
+        # penalties for loops / spam
+        if len(self.history) >= 2 and self.history[-1] == self.history[-2] == action.action_type:
+            reward -= 0.2
+
+        # resolve/escalate advances queue
+        if action.action_type in ["resolve", "escalate"]:
+            self._advance()
+
+        # record
+        self.total_reward += reward
+        self.history.append(action.action_type)
+
+        # step cap
+        if self.steps >= self.max_steps:
+            self.done = True
+
+        return StepResult(
+            observation=self._obs(action.action_type),
+            reward=float(max(-1.0, min(1.0, reward))),
+            done=self.done,
+            info={"reason": reason}
+        )
+
     def state(self):
         return {
-            "step": self.step_count,
+            "steps": self.steps,
+            "queue_remaining": len(self.queue) + (1 if self.current else 0),
+            "total_reward": self.total_reward,
             "task": self.task
         }

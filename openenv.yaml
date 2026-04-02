@@ -1,4 +1,4 @@
 name: email_ops_env
-version: 1.0
-description: Email triage and response environment
+version: 1.1
+description: Stateful email triage, reply and escalation environment
 entrypoint: app.py
