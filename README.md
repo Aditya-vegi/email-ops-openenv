@@ -16,11 +16,3 @@ pinned: false
 
 \---
 
-
-
-\# Email Ops OpenEnv
-
-
-
-This is an OpenEnv environment for email triage automation.
-
