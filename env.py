@@ -2,6 +2,7 @@ from typing import List, Tuple
 from models import Email, Observation, Action, StepResult
 from graders import grade_easy, grade_medium, grade_hard
 
+
 class EmailEnv:
     def __init__(self, task: str = "hard", max_steps: int = 8):
         self.task = task
@@ -56,45 +57,82 @@ class EmailEnv:
     def _grade(self, action: Action) -> Tuple[float, str]:
         if not self.current:
             return 0.0, "no email"
+
         if self.task == "easy":
             return grade_easy(self.current, action)
-        if self.task == "medium":
+        elif self.task == "medium":
             return grade_medium(self.current, action)
-        return grade_hard(self.current, action)
+        else:
+            return grade_hard(self.current, action)
 
     def _advance(self):
-        # move to next email
         self.current = self.queue.pop(0) if self.queue else None
         if not self.current:
             self.done = True
 
     def step(self, action: Action) -> StepResult:
         if self.done:
-            return StepResult(observation=self._obs("noop"), reward=0.0, done=True, info={})
+            return StepResult(
+                observation=self._obs("noop"),
+                reward=0.0,
+                done=True,
+                info={}
+            )
 
         self.steps += 1
         score, reason = self._grade(action)
 
-        # trajectory shaping
+        # --- BASE REWARD ---
         reward = score
-        if action.action_type == "next":
-            reward -= 0.2  # discourage skipping
 
-        # penalties for loops / spam
+        # --- STEP COST ---
+        reward -= 0.05
+
+        # --- INVALID ACTION PENALTY ---
+        valid_actions = ["classify", "reply", "escalate", "resolve", "next"]
+        if action.action_type not in valid_actions:
+            reward -= 0.3
+            reason = "invalid action"
+
+        # --- SKIP PENALTY ---
+        if action.action_type == "next":
+            reward -= 0.2
+
+        # --- LOOP/SPAM PENALTY ---
         if len(self.history) >= 2 and self.history[-1] == self.history[-2] == action.action_type:
             reward -= 0.2
 
-        # resolve/escalate advances queue
-        if action.action_type in ["resolve", "escalate"]:
-            self._advance()
+        # --- WORKFLOW LOGIC ---
+        if self.current:
+            if action.action_type == "resolve":
+                if self.current.requires_escalation:
+                    reward -= 0.4   # wrong resolve
+                else:
+                    reward += 0.2   # correct resolve
+                    self._advance()
 
-        # record
-        self.total_reward += reward
+            elif action.action_type == "escalate":
+                if self.current.requires_escalation:
+                    reward += 0.3   # correct escalation
+                    self._advance()
+                else:
+                    reward -= 0.3   # unnecessary escalation
+
+        # --- TRACK HISTORY ---
         self.history.append(action.action_type)
 
-        # step cap
-        if self.steps >= self.max_steps:
+        # --- EPISODE END ---
+        if self.steps >= self.max_steps or not self.current:
             self.done = True
+
+            # success / failure bonus
+            if self.total_reward > 1.5:
+                reward += 0.3
+            else:
+                reward -= 0.2
+
+        # --- FINAL REWARD UPDATE (FIXED BUG) ---
+        self.total_reward += reward
 
         return StepResult(
             observation=self._obs(action.action_type),
