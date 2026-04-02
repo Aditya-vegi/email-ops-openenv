@@ -1,6 +1,5 @@
-﻿---
+---
 title: email-ops-openenv
-emoji: 📧
 colorFrom: blue
 colorTo: green
 sdk: docker
