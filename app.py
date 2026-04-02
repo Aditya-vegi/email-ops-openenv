@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
+# Simple action model
 class Action(BaseModel):
     message: str
 
@@ -15,7 +16,7 @@ def reset():
     return {
         "email_id": 1,
         "subject": "Server Down",
-        "body": "Fix ASAP",
+        "body": "Fix immediately",
         "sender_role": "boss"
     }
 
@@ -24,8 +25,8 @@ def step(action: Action):
     return {
         "observation": {
             "email_id": 2,
-            "subject": "Next Email",
-            "body": "Continue",
+            "subject": "Next Task",
+            "body": "Continue processing",
             "sender_role": "client"
         },
         "reward": 0.5,
