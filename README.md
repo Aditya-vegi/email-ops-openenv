@@ -26,9 +26,15 @@ The environment follows the **OpenEnv specification** and exposes:
 
 ---
 
-## 🚀 Live Demo
+## 🚀 Live Deployment
 
 👉 https://ADITYA-VEGI-email-ops-openenv.hf.space/
+
+### ✔ Deployment Status
+
+- `/reset` endpoint → ✅ Working  
+- Docker container → ✅ Running  
+- Public Space → ✅ Accessible  
 
 ---
 
@@ -36,31 +42,65 @@ The environment follows the **OpenEnv specification** and exposes:
 
 The agent must:
 
-- Correctly classify email priority  
-- Respond appropriately to emails  
+- Classify email priority correctly  
+- Generate appropriate responses  
 - Decide whether to escalate or resolve  
-- Manage multiple emails efficiently  
+- Efficiently process multiple emails  
 
 ---
 
 ## 🌍 Real-World Relevance
 
-Email workflows are critical in:
+This environment models real workflows used in:
 
 - Customer support systems  
 - IT incident response  
 - Business communication pipelines  
 
-This environment simulates:
+Key challenges simulated:
 
-- Time-sensitive tasks  
-- Multi-email queues  
+- Time-sensitive emails  
+- Multi-email queue management  
 - Decision-based workflows  
-- Operational constraints  
+- Resource constraints  
 
 ---
 
-## ⚙️ Environment Design
+
+
+## 🏗️ Architecture Diagram
+The system follows a modular OpenEnv architecture:
+            +----------------------+
+            |   LLM / Agent        |
+            | (OpenAI Client)      |
+            +----------+-----------+
+                       |
+                       | Actions (JSON)
+                       ▼
+            +----------------------+
+            |   EmailEnv           |
+            |  (Core Environment)  |
+            +----------+-----------+
+                       |
+    ------------------------------------------
+    |                |                        |
+    ▼                ▼                        ▼
+            +----------------------+
+            |   LLM / Agent        |
+            | (OpenAI Client)      |
+            +----------+-----------+
+                       |
+                       | Actions (JSON)
+                       ▼
+            +----------------------+
+            |   EmailEnv           |
+            |  (Core Environment)  |
+            +----------+-----------+
+                       |
+    ------------------------------------------
+    |                |                        |
+    ▼                ▼                        ▼
+
 
 ### 📥 Observation Space
 
