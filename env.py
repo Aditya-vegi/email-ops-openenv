@@ -1,6 +1,15 @@
-from typing import List, Tuple
-from models import Email, Observation, Action, StepResult
+from typing import List, Tuple, Optional, Dict, Any
+from models import Email, Observation, Action, StepResult, EmailObservation, EmailAction
 from graders import grade_easy, grade_medium, grade_hard
+
+
+class StepResult:
+    """Wrapper class for OpenEnv step results"""
+    def __init__(self, observation: Observation, reward: float, done: bool, info: Dict[str, Any]):
+        self.observation = observation
+        self.reward = reward
+        self.done = done
+        self.info = info
 
 
 class EmailEnv:
@@ -44,6 +53,7 @@ class EmailEnv:
         self.done = False
         self.history: List[str] = []
         self.total_reward = 0.0
+        self.opened_emails = set()  # Track which emails have been opened
         return self._obs(last_action=None)
 
     def _obs(self, last_action: str | None) -> Observation:
@@ -71,20 +81,35 @@ class EmailEnv:
             self.done = True
 
     def step(self, action: Action) -> StepResult:
+        """Step function returning StepResult object for OpenEnv compliance"""
         if self.done:
-            return StepResult(
-                observation=self._obs("noop"),
-                reward=0.0,
-                done=True,
-                info={}
-            )
+            return StepResult(self._obs("noop"), 0.0, True, {"reason": "episode done"})
 
         self.steps += 1
         score, reason = self._grade(action)
 
-        # --- BASE REWARD ---
-        reward = score
-
+        # --- ENHANCED REWARD SIGNAL ---
+        reward = 0.0
+        
+        # Reward for opening unread email (first interaction)
+        if self.current and self.current.email_id not in self.opened_emails:
+            reward += 0.1
+            self.opened_emails.add(self.current.email_id)
+            reason = f"opened email: {reason}"
+        
+        # Base score from grader
+        reward += score
+        
+        # Bonus for correct category identification
+        if action.action_type == "classify" and score > 0.5:
+            reward += 0.4
+            reason = f"correct classification: {reason}"
+        
+        # Penalty for hallucinating actions (invalid targets)
+        if action.action_type in ["reply", "escalate", "resolve"] and not self.current:
+            reward -= 0.5
+            reason = f"hallucinated action: {reason}"
+        
         # --- STEP COST ---
         reward -= 0.05
 
@@ -142,18 +167,22 @@ class EmailEnv:
                 reward += 0.3
             else:
                 reward -= 0.2
+        
+        # --- LARGE PENALTY FOR EXCEEDING MAX STEPS ---
+        if self.steps > self.max_steps:
+            reward -= 1.0  # Large negative reward to discourage infinite loops
 
         # --- FINAL REWARD UPDATE (FIXED BUG) ---
         self.total_reward += reward
 
-        return StepResult(
-            observation=self._obs(action.action_type),
-            reward=float(max(-1.0, min(1.0, reward))),
-            done=self.done,
-            info={"reason": reason}
-        )
+        # Clamp reward to reasonable range
+        reward = max(-1.0, min(1.0, reward))
 
-    def state(self):
+        info = {"reason": reason, "steps": self.steps, "total_reward": self.total_reward}
+        
+        return StepResult(self._obs(action.action_type), reward, self.done, info)
+
+    def state(self) -> Dict[str, Any]:
         return {
             "steps": self.steps,
             "queue_remaining": len(self.queue) + (1 if self.current else 0),

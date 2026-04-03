@@ -5,6 +5,8 @@ colorTo: green
 sdk: docker
 app_file: app.py
 pinned: false
+tags:
+  - openenv
 ---
 
 # 📧 Email Ops OpenEnv Environment
