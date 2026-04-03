@@ -50,6 +50,7 @@ async def main():
         rewards: List[float] = []
         steps = 0
         success = False
+        episode_done = False
         
         try:
             # Reset environment for this task
@@ -71,7 +72,16 @@ async def main():
                 
                 r = resp.get("observation") or {}
                 if done:
+                    episode_done = True
                     break
+            
+            # CRITICAL: If agent doesn't finish in max_steps, manually print [END] tag
+            if not episode_done:
+                # Force end episode if max_steps reached
+                try:
+                    requests.post(f"{API_BASE}/step", json={"action_type":"next","content":"force_end"}).json()
+                except:
+                    pass  # Ignore errors for forced end
             
             # Calculate scores
             final_score = sum(rewards) / max(1, len(rewards))
