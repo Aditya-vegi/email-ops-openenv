@@ -13,7 +13,7 @@ except:
 
 API_BASE = os.getenv("SPACE_URL", "https://ADITYA-VEGI-email-ops-openenv.hf.space")
 MODEL = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-MAX_STEPS = 8
+MAX_STEPS = 15
 
 def log_start(task_id: str):
     """Helper function to ensure exact logging format"""

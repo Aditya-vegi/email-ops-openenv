@@ -14,7 +14,7 @@ class StepResult:
 
 
 class EmailEnv:
-    def __init__(self, task: str = "hard", max_steps: int = 8):
+    def __init__(self, task: str = "hard", max_steps: int = 15):
         self.task = task
         self.max_steps = max_steps
         self.reset()
@@ -397,7 +397,8 @@ class EmailEnv:
 
     def archive_email(self, email_id: str) -> Dict[str, Any]:
         """
-        Archives a specific email to clear the inbox.
+        Archives the email to clear the inbox. Use this only after a reply has been sent.
+        
         Args:
             email_id: The unique UUID of the email to be moved.
         
@@ -426,6 +427,184 @@ class EmailEnv:
                     return {"success": True, "message": f"Email {email_id} archived successfully"}
         
         return {"success": False, "error": f"Email {email_id} not found"}
+
+    def classify_email(self, priority: str) -> Dict[str, Any]:
+        """
+        Classifies the current email priority. Use this to organize emails by urgency.
+        
+        Args:
+            priority: The priority level (urgent, high, normal, low).
+        
+        Returns:
+            Dict containing the result of the classification operation.
+        """
+        if not self.current:
+            return {"success": False, "error": "No email currently loaded to classify"}
+        
+        valid_priorities = ["urgent", "high", "normal", "low"]
+        if priority.lower() not in valid_priorities:
+            return {"success": False, "error": f"Invalid priority: {priority}. Use one of: {valid_priorities}"}
+        
+        # Update internal state
+        if self.current.email_id not in self.internal_state["classified_emails"]:
+            self.internal_state["classified_emails"].append(self.current.email_id)
+            self.internal_state["emails_processed"].append(self.current.email_id)
+        
+        self.current.expected_priority = priority.lower()
+        return {"success": True, "message": f"Email classified as {priority}"}
+
+    def reply_to_email(self, response: str) -> Dict[str, Any]:
+        """
+        Sends a reply to the current email. Use this for routine communications.
+        
+        Args:
+            response: The response content to send.
+        
+        Returns:
+            Dict containing the result of the reply operation.
+        """
+        if not self.current:
+            return {"success": False, "error": "No email currently loaded to reply to"}
+        
+        if not isinstance(response, str):
+            return {"success": False, "error": "Response must be a string"}
+        
+        if len(response) > 1000:
+            return {"success": False, "error": "Response too long (max 1000 characters)"}
+        
+        # Update internal state
+        if self.current.email_id not in self.internal_state["replied_emails"]:
+            self.internal_state["replied_emails"].append(self.current.email_id)
+            self.internal_state["emails_processed"].append(self.current.email_id)
+        
+        return {"success": True, "message": f"Reply sent to email {self.current.email_id}"}
+
+    def escalate_email(self, reason: str) -> Dict[str, Any]:
+        """
+        Escalates the current email to management. Use this for urgent issues only.
+        
+        Args:
+            reason: The reason for escalation.
+        
+        Returns:
+            Dict containing the result of the escalation operation.
+        """
+        if not self.current:
+            return {"success": False, "error": "No email currently loaded to escalate"}
+        
+        if not isinstance(reason, str):
+            return {"success": False, "error": "Reason must be a string"}
+        
+        if not self.current.requires_escalation:
+            return {"success": False, "error": "This email does not require escalation"}
+        
+        # Update internal state
+        if self.current.email_id not in self.internal_state["escalated_emails"]:
+            self.internal_state["escalated_emails"].append(self.current.email_id)
+            self.internal_state["emails_processed"].append(self.current.email_id)
+        
+        self._advance()
+        return {"success": True, "message": f"Email {self.current.email_id} escalated to management"}
+
+    def resolve_email(self, resolution: str) -> Dict[str, Any]:
+        """
+        Resolves the current email and closes it. Use this for routine matters.
+        
+        Args:
+            resolution: The resolution details.
+        
+        Returns:
+            Dict containing the result of the resolution operation.
+        """
+        if not self.current:
+            return {"success": False, "error": "No email currently loaded to resolve"}
+        
+        if self.current.requires_escalation:
+            return {"success": False, "error": "Urgent emails must be escalated, not resolved"}
+        
+        if not isinstance(resolution, str):
+            return {"success": False, "error": "Resolution must be a string"}
+        
+        # Update internal state
+        if self.current.email_id not in self.internal_state["resolved_emails"]:
+            self.internal_state["resolved_emails"].append(self.current.email_id)
+            self.internal_state["emails_processed"].append(self.current.email_id)
+        
+        self._advance()
+        return {"success": True, "message": f"Email {self.current.email_id} resolved successfully"}
+
+    def next_email(self) -> Dict[str, Any]:
+        """
+        Moves to the next email in the queue. Use this to advance through emails.
+        
+        Returns:
+            Dict containing the result of the next operation.
+        """
+        self._advance()
+        if self.current:
+            return {"success": True, "message": f"Moved to email {self.current.email_id}", "email_id": self.current.email_id}
+        else:
+            return {"success": True, "message": "No more emails in queue"}
+
+    def _find_closest_match(self, target: str, options: List[str]) -> str:
+        """
+        Finds the closest string match using Levenshtein distance.
+        
+        Args:
+            target: The target string to match.
+            options: List of possible options.
+            
+        Returns:
+            str: The closest match.
+        """
+        if not target:
+            return options[0] if options else "unknown"
+        
+        target_lower = target.lower()
+        best_match = options[0]
+        best_score = len(target_lower)
+        
+        for option in options:
+            score = len(target_lower) - sum(1 for i, char in enumerate(target_lower) if i < len(option) and char == option[i].lower())
+            if score < best_score:
+                best_score = score
+                best_match = option
+        
+        return best_match
+
+    def _get_milestones(self) -> List[str]:
+        """
+        Gets the list of milestones achieved in the current episode.
+        
+        Returns:
+            List[str]: List of achieved milestones.
+        """
+        milestones = []
+        if len(self.opened_emails) > 0:
+            milestones.append(f"Opened {len(self.opened_emails)} emails")
+        if len(self.internal_state["classified_emails"]) > 0:
+            milestones.append(f"Classified {len(self.internal_state['classified_emails'])} emails")
+        if len(self.internal_state["replied_emails"]) > 0:
+            milestones.append(f"Replied to {len(self.internal_state['replied_emails'])} emails")
+        if len(self.internal_state["escalated_emails"]) > 0:
+            milestones.append(f"Escalated {len(self.internal_state['escalated_emails'])} emails")
+        if len(self.internal_state["resolved_emails"]) > 0:
+            milestones.append(f"Resolved {len(self.internal_state['resolved_emails'])} emails")
+        return milestones
+
+    def _get_trajectory_feedback(self) -> str:
+        """
+        Provides trajectory feedback for the agent.
+        
+        Returns:
+            str: Feedback message about the current trajectory.
+        """
+        if self.total_reward > 0.5:
+            return f"Excellent trajectory! Current score: {self.total_reward:.2f}"
+        elif self.total_reward > 0.0:
+            return f"Good progress! Current score: {self.total_reward:.2f}"
+        else:
+            return f"Needs improvement. Current score: {self.total_reward:.2f}"
 
     def state(self) -> Dict[str, Any]:
         """Return deep copy of current state to prevent memory leaks between resets"""

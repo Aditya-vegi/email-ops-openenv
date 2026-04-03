@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any, Tuple, Literal
+import copy
 
 class EmailObservation(BaseModel):
     """Strict OpenEnv observation interface with all required fields"""
@@ -11,7 +12,7 @@ class EmailObservation(BaseModel):
     history: List[str] = Field(default_factory=list, description="Action history")
 
 class EmailAction(BaseModel):
-    """Strict OpenEnv action interface with type and payload"""
+    """Strict OpenEnv action interface with type and payload dictionary"""
     type: str = Field(..., description="Action type: classify, reply, escalate, resolve, next")
     payload: Dict[str, Any] = Field(default_factory=dict, description="Action-specific data")
     action_type: Optional[str] = Field(default=None, description="Legacy action_type field")
@@ -43,3 +44,14 @@ class StepResult(BaseModel):
     reward: float
     done: bool
     info: Dict[str, Any]
+
+class StateSnapshot(BaseModel):
+    """Immutable state snapshot for reproducibility"""
+    steps: int
+    current_step: int
+    queue_remaining: int
+    total_reward: float
+    task: str
+    internal_state: Dict[str, Any]
+    inbox: List[Dict[str, Any]]
+    timestamp: str
