@@ -54,6 +54,16 @@ class EmailEnv:
         self.history: List[str] = []
         self.total_reward = 0.0
         self.opened_emails = set()  # Track which emails have been opened
+        
+        # Internal state tracking for deterministic grading
+        self.internal_state = {
+            "emails_processed": [],
+            "escalated_emails": [],
+            "resolved_emails": [],
+            "classified_emails": [],
+            "replied_emails": []
+        }
+        
         return self._obs(last_action=None)
 
     def _obs(self, last_action: str | None) -> Observation:
@@ -68,12 +78,13 @@ class EmailEnv:
         if not self.current:
             return 0.0, "no email"
 
+        # Pass internal state to gradaders for deterministic checking
         if self.task == "easy":
-            return grade_easy(self.current, action)
+            return grade_easy(self.current, action, self.internal_state)
         elif self.task == "medium":
-            return grade_medium(self.current, action)
+            return grade_medium(self.current, action, self.internal_state)
         else:
-            return grade_hard(self.current, action)
+            return grade_hard(self.current, action, self.internal_state)
 
     def _advance(self):
         self.current = self.queue.pop(0) if self.queue else None
@@ -113,8 +124,8 @@ class EmailEnv:
             self.done = True
             return StepResult(self._obs(action.action_type), reward, True, {"reason": reason, "exploit_check": "invalid_action_ended"})
         
-        # --- STEP COST ---
-        reward -= 0.05
+        # --- STEP COST (OPTIMIZED TIME PENALTY) ---
+        reward -= 0.03  # Reduced from 0.05 to prevent "suicidal" behavior but still prevent wheel spinning
 
         # --- INVALID ACTION PENALTY ---
         valid_actions = ["classify", "reply", "escalate", "resolve", "next"]
@@ -145,21 +156,55 @@ class EmailEnv:
             reward -= 0.5  # Increased penalty for repeated actions
             reason = "excessive repetition detected"
 
-        # --- WORKFLOW LOGIC ---
+        # --- WORKFLOW LOGIC & INTERNAL STATE UPDATES ---
         if self.current:
-            if action.action_type == "resolve":
+            email_id = self.current.email_id
+            
+            if action.action_type == "classify":
+                # Update internal state for deterministic grading
+                if email_id not in self.internal_state["classified_emails"]:
+                    self.internal_state["classified_emails"].append(email_id)
+                    self.internal_state["emails_processed"].append(email_id)
+                
                 if self.current.requires_escalation:
-                    reward -= 0.4   # wrong resolve
+                    reward -= 0.4   # wrong action for urgent email
                 else:
-                    reward += 0.2   # correct resolve
-                    self._advance()
-
+                    reward += 0.2   # correct for routine email
+                    
+            elif action.action_type == "reply":
+                # Update internal state
+                if email_id not in self.internal_state["replied_emails"]:
+                    self.internal_state["replied_emails"].append(email_id)
+                    self.internal_state["emails_processed"].append(email_id)
+                
+                if self.current.requires_escalation:
+                    reward -= 0.3   # wrong action for urgent email
+                else:
+                    reward += 0.2   # appropriate for routine email
+                    
             elif action.action_type == "escalate":
+                # Update internal state for deterministic checking
+                if email_id not in self.internal_state["escalated_emails"]:
+                    self.internal_state["escalated_emails"].append(email_id)
+                    self.internal_state["emails_processed"].append(email_id)
+                
                 if self.current.requires_escalation:
                     reward += 0.3   # correct escalation
                     self._advance()
                 else:
                     reward -= 0.3   # unnecessary escalation
+                    
+            elif action.action_type == "resolve":
+                # Update internal state
+                if email_id not in self.internal_state["resolved_emails"]:
+                    self.internal_state["resolved_emails"].append(email_id)
+                    self.internal_state["emails_processed"].append(email_id)
+                
+                if self.current.requires_escalation:
+                    reward -= 0.4   # wrong resolve
+                else:
+                    reward += 0.2   # correct resolve
+                    self._advance()
 
         # --- TRACK HISTORY ---
         self.history.append(action.action_type)
@@ -184,7 +229,7 @@ class EmailEnv:
         # Clamp reward to reasonable range
         reward = max(-1.0, min(1.0, reward))
 
-        info = {"reason": reason, "steps": self.steps, "total_reward": self.total_reward}
+        info = {"reason": reason, "steps": self.steps, "total_reward": self.total_reward, "internal_state": self.internal_state}
         
         return StepResult(self._obs(action.action_type), reward, self.done, info)
 
@@ -193,5 +238,6 @@ class EmailEnv:
             "steps": self.steps,
             "queue_remaining": len(self.queue) + (1 if self.current else 0),
             "total_reward": self.total_reward,
-            "task": self.task
+            "task": self.task,
+            "internal_state": self.internal_state
         }
