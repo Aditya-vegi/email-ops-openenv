@@ -388,6 +388,8 @@ def grade_email_handling(self, action, expected):
 
 ### **Task 3: Hard Workflow**
 **Objective**: Execute proper escalation/resolution workflow
+**Why it's hard**: Task 3 requires the agent to reason through a multi-step dependency: fetching a policy, cross-referencing a sender, and drafting a specific response. The agent must correctly identify which emails require escalation vs. resolution, maintain internal state consistency across multiple actions, and execute the proper workflow sequence while managing time constraints.
+
 **Success Criteria**: Score 1.0 if:
 - Email requiring escalation is escalated AND
 - Email requiring resolution is resolved AND

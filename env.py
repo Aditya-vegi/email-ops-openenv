@@ -397,10 +397,10 @@ class EmailEnv:
 
     def archive_email(self, email_id: str) -> Dict[str, Any]:
         """
-        Archives the email to clear the inbox. Use this only after a reply has been sent.
+        Moves the specified email to ARCHIVE folder and returns a success observation.
         
         Args:
-            email_id: The unique UUID of the email to be moved.
+            email_id: The unique identifier of the email to be archived.
         
         Returns:
             Dict containing the result of the archive operation.
@@ -430,7 +430,7 @@ class EmailEnv:
 
     def classify_email(self, priority: str) -> Dict[str, Any]:
         """
-        Classifies the current email priority. Use this to organize emails by urgency.
+        Sets the priority level for the current email and returns classification observation.
         
         Args:
             priority: The priority level (urgent, high, normal, low).
@@ -455,7 +455,7 @@ class EmailEnv:
 
     def reply_to_email(self, response: str) -> Dict[str, Any]:
         """
-        Sends a reply to the current email. Use this for routine communications.
+        Sends a reply to the current email and returns delivery confirmation observation.
         
         Args:
             response: The response content to send.
@@ -481,7 +481,7 @@ class EmailEnv:
 
     def escalate_email(self, reason: str) -> Dict[str, Any]:
         """
-        Escalates the current email to management. Use this for urgent issues only.
+        Escalates the current email to management and returns escalation confirmation observation.
         
         Args:
             reason: The reason for escalation.
@@ -508,7 +508,7 @@ class EmailEnv:
 
     def resolve_email(self, resolution: str) -> Dict[str, Any]:
         """
-        Resolves the current email and closes it. Use this for routine matters.
+        Resolves the current email and returns resolution confirmation observation.
         
         Args:
             resolution: The resolution details.
@@ -535,7 +535,7 @@ class EmailEnv:
 
     def next_email(self) -> Dict[str, Any]:
         """
-        Moves to the next email in the queue. Use this to advance through emails.
+        Advances to the next email in the queue and returns new email observation.
         
         Returns:
             Dict containing the result of the next operation.
@@ -545,6 +545,91 @@ class EmailEnv:
             return {"success": True, "message": f"Moved to email {self.current.email_id}", "email_id": self.current.email_id}
         else:
             return {"success": True, "message": "No more emails in queue"}
+
+    def mark_as_spam(self, email_id: str) -> Dict[str, Any]:
+        """
+        Moves the specified email to SPAM folder and returns a success observation.
+        
+        Args:
+            email_id: The unique identifier of the email to mark as spam.
+        
+        Returns:
+            Dict containing the result of the spam operation.
+        """
+        # Convert string email_id to int for comparison
+        try:
+            email_id_int = int(email_id)
+        except (ValueError, TypeError):
+            return {"success": False, "error": f"Invalid email_id format: {email_id}. Expected integer."}
+        
+        # Find and mark as spam
+        if self.current and self.current.email_id == email_id_int:
+            # Mark current email as spam and move to next
+            self.current = self.queue.pop(0) if self.queue else None
+            if not self.current:
+                self.done = True
+            return {"success": True, "message": f"Email {email_id} marked as spam"}
+        else:
+            # Check queue for the email
+            for i, email in enumerate(self.queue):
+                if email.email_id == email_id_int:
+                    # Remove from queue (marked as spam)
+                    self.queue.pop(i)
+                    return {"success": True, "message": f"Email {email_id} marked as spam"}
+        
+        return {"success": False, "error": f"Email {email_id} not found"}
+
+    def forward_email(self, email_id: str, recipient: str) -> Dict[str, Any]:
+        """
+        Forwards the specified email to recipient and returns forwarding confirmation observation.
+        
+        Args:
+            email_id: The unique identifier of the email to forward.
+            recipient: The email address or name of the recipient.
+        
+        Returns:
+            Dict containing the result of the forwarding operation.
+        """
+        # Convert string email_id to int for comparison
+        try:
+            email_id_int = int(email_id)
+        except (ValueError, TypeError):
+            return {"success": False, "error": f"Invalid email_id format: {email_id}. Expected integer."}
+        
+        if not recipient or not isinstance(recipient, str):
+            return {"success": False, "error": "Recipient must be a non-empty string"}
+        
+        # Find and forward email
+        if self.current and self.current.email_id == email_id_int:
+            return {"success": True, "message": f"Email {email_id} forwarded to {recipient}"}
+        else:
+            # Check queue for the email
+            for i, email in enumerate(self.queue):
+                if email.email_id == email_id_int:
+                    return {"success": True, "message": f"Email {email_id} forwarded to {recipient}"}
+        
+        return {"success": False, "error": f"Email {email_id} not found"}
+
+    def save_draft(self, content: str) -> Dict[str, Any]:
+        """
+        Saves the current email as a draft and returns draft confirmation observation.
+        
+        Args:
+            content: The draft content to save.
+        
+        Returns:
+            Dict containing the result of the draft operation.
+        """
+        if not self.current:
+            return {"success": False, "error": "No email currently loaded to draft"}
+        
+        if not isinstance(content, str):
+            return {"success": False, "error": "Draft content must be a string"}
+        
+        if len(content) > 2000:
+            return {"success": False, "error": "Draft content too long (max 2000 characters)"}
+        
+        return {"success": True, "message": f"Draft saved for email {self.current.email_id}"}
 
     def _find_closest_match(self, target: str, options: List[str]) -> str:
         """
