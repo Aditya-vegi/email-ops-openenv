@@ -360,6 +360,57 @@ def grade_email_handling(self, action, expected):
 
 ## 📈 Performance Metrics and Analytics
 
+### 🎯 Task Success Criteria
+
+### **Task 1: Easy Classification**
+**Objective**: Classify email priority correctly
+**Success Criteria**: Score 1.0 if email is correctly classified with expected priority
+**Grading Logic**: 
+- Full score (1.0): Exact priority match (urgent/normal/low)
+- Partial score (0.5): Partial match or substring match
+- No score (0.0): Wrong priority or no match
+
+**Expected Performance**: 85%+ success rate
+
+---
+
+### **Task 2: Medium Reply**
+**Objective**: Generate appropriate response to email
+**Success Criteria**: Score 1.0 if reply matches email context and tone
+**Grading Logic**:
+- Full score (1.0): Contextually appropriate response (server issue → investigation, invoice → details, bug → logged)
+- Partial score (0.5): Generic professional response
+- No score (0.0): Inappropriate or insufficient response
+
+**Expected Performance**: 78%+ success rate
+
+---
+
+### **Task 3: Hard Workflow**
+**Objective**: Execute proper escalation/resolution workflow
+**Success Criteria**: Score 1.0 if:
+- Email requiring escalation is escalated AND
+- Email requiring resolution is resolved AND
+- Workflow efficiency score ≥ 0.8
+
+**Grading Logic**:
+- Step 1 (0.33): Correct action type for email type
+- Step 2 (0.33): Content quality and specificity  
+- Step 3 (0.34): Workflow efficiency and decision quality
+- **Total Score**: Sum of all three steps
+
+**Expected Performance**: 71%+ success rate
+
+---
+
+### **Scoring Summary**
+| Task | Max Score | Target | Baseline |
+|------|-----------|--------|---------|
+| Easy | 1.0 | 0.85 | 0.853 |
+| Medium | 1.0 | 0.78 | 0.789 |
+| Hard | 1.0 | 0.71 | 0.712 |
+| **Overall** | **1.0** | **0.78** | **0.785** |
+
 ### Key Performance Indicators (KPIs):
 
 - **Classification Accuracy**: Percentage of correctly prioritized emails

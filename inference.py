@@ -15,6 +15,21 @@ API_BASE = os.getenv("SPACE_URL", "https://ADITYA-VEGI-email-ops-openenv.hf.spac
 MODEL = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 MAX_STEPS = 15
 
+# Verify critical environment variables are available
+def check_env_vars():
+    """Check if required environment variables are set"""
+    required_vars = ["OPENAI_API_KEY", "API_BASE_URL", "MODEL_NAME"]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    
+    if missing_vars:
+        print(f"Warning: Missing environment variables: {missing_vars}")
+        print("Using fallback values for local testing")
+        return False
+    return True
+
+# Environment variable check at startup
+ENV_VARS_OK = check_env_vars()
+
 def log_start(task_id: str):
     """Helper function to ensure exact logging format"""
     print(f"[START] Task ID: {task_id}")
