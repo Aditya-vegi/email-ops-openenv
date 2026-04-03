@@ -1,4 +1,4 @@
 name: email_ops_env
-version: 1.1
+version: "1.0.0"
 description: Stateful email triage, reply and escalation environment
 entrypoint: env:EmailEnv

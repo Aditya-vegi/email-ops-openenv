@@ -105,10 +105,13 @@ class EmailEnv:
             reward += 0.4
             reason = f"correct classification: {reason}"
         
-        # Penalty for hallucinating actions (invalid targets)
+        # Penalty for hallucinating actions (invalid targets) - EXPLOIT CHECK
         if action.action_type in ["reply", "escalate", "resolve"] and not self.current:
             reward -= 0.5
-            reason = f"hallucinated action: {reason}"
+            reason = "hallucinated action - no email to act on"
+            # End episode for invalid action to show exploit prevention
+            self.done = True
+            return StepResult(self._obs(action.action_type), reward, True, {"reason": reason, "exploit_check": "invalid_action_ended"})
         
         # --- STEP COST ---
         reward -= 0.05
@@ -117,7 +120,10 @@ class EmailEnv:
         valid_actions = ["classify", "reply", "escalate", "resolve", "next"]
         if action.action_type not in valid_actions:
             reward -= 0.5  # Increased penalty for invalid actions
-            reason = "invalid action"
+            reason = "invalid action type"
+            # End episode for invalid action to show exploit prevention
+            self.done = True
+            return StepResult(self._obs(action.action_type), reward, True, {"reason": reason, "exploit_check": "invalid_action_ended"})
             # Log security violation attempt
             print(f"SECURITY: Invalid action attempted: {action.action_type}")
 
