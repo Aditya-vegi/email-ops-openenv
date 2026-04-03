@@ -91,16 +91,28 @@ class EmailEnv:
         # --- INVALID ACTION PENALTY ---
         valid_actions = ["classify", "reply", "escalate", "resolve", "next"]
         if action.action_type not in valid_actions:
-            reward -= 0.3
+            reward -= 0.5  # Increased penalty for invalid actions
             reason = "invalid action"
+            # Log security violation attempt
+            print(f"SECURITY: Invalid action attempted: {action.action_type}")
 
-        # --- SKIP PENALTY ---
-        if action.action_type == "next":
-            reward -= 0.2
+        # --- CONTENT VALIDATION ---
+        if action.content:
+            # Check for potential injection attempts
+            if len(action.content) > 500:  # Reasonable content length limit
+                reward -= 0.3
+                reason = "content too long - potential injection"
+            # Check for suspicious patterns
+            suspicious_patterns = ["<script>", "javascript:", "eval(", "exec("]
+            if any(pattern in action.content.lower() for pattern in suspicious_patterns):
+                reward -= 0.8
+                reason = "suspicious content detected"
+                print(f"SECURITY: Suspicious content detected: {action.content[:100]}")
 
         # --- LOOP/SPAM PENALTY ---
-        if len(self.history) >= 2 and self.history[-1] == self.history[-2] == action.action_type:
-            reward -= 0.2
+        if len(self.history) >= 3 and self.history[-1] == self.history[-2] == self.history[-3]:
+            reward -= 0.5  # Increased penalty for repeated actions
+            reason = "excessive repetition detected"
 
         # --- WORKFLOW LOGIC ---
         if self.current:
