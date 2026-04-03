@@ -70,36 +70,7 @@ Key challenges simulated:
 
 ## 🏗️ Architecture Diagram
 The system follows a modular OpenEnv architecture:
-            +----------------------+
-            |   LLM / Agent        |
-            | (OpenAI Client)      |
-            +----------+-----------+
-                       |
-                       | Actions (JSON)
-                       ▼
-            +----------------------+
-            |   EmailEnv           |
-            |  (Core Environment)  |
-            +----------+-----------+
-                       |
-    ------------------------------------------
-    |                |                        |
-    ▼                ▼                        ▼
-            +----------------------+
-            |   LLM / Agent        |
-            | (OpenAI Client)      |
-            +----------+-----------+
-                       |
-                       | Actions (JSON)
-                       ▼
-            +----------------------+
-            |   EmailEnv           |
-            |  (Core Environment)  |
-            +----------+-----------+
-                       |
-    ------------------------------------------
-    |                |                        |
-    ▼                ▼                        ▼
+         <img width="1408" height="768" alt="Gemini_Generated_Image_8ntoqr8ntoqr8nto" src="https://github.com/user-attachments/assets/f7472120-a709-40cb-b1c8-e3ade3f539e5" />
 
 
 ### 📥 Observation Space
