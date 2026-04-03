@@ -185,7 +185,78 @@ This environment represents an **innovative approach** to training AI agents in 
 
 ---
 
-## 📊 Baseline Performance
+## 📊 Agent Observation Structure
+
+The agent receives structured observations that include the current email and environment state:
+
+### 📧 What the Agent Sees
+
+```
+Observation Structure:
+┌─────────────────────────────────────────────────────────────┐
+│ current: {                                                 │
+│   "email_id": 1,                                           │
+│   "subject": "Production server down",                     │
+│   "body": "Prod is down. Fix ASAP.",                       │
+│   "sender_role": "boss",                                   │
+│   "expected_priority": "urgent",                          │
+│   "requires_escalation": true                              │
+│ },                                                         │
+│ queue_size: 3,                                             │
+│ last_action: null,                                         │
+│ history: []                                                │
+└─────────────────────────────────────────────────────────────┘
+
+Available Actions:
+- classify: Set email priority (urgent/normal/low)
+- reply: Generate response to email
+- escalate: Forward urgent issues to management
+- resolve: Handle and close routine emails
+- next: Move to next email in queue
+```
+
+### 🎯 Decision Flow
+
+```
+Agent Decision Process:
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐
+│  Observe    │ →  │  Analyze     │ →  │  Act        │
+│  Email      │    │  Priority    │    │  (classify/  │
+│  + Queue    │    │  + Context   │    │   reply/     │
+│             │    │              │    │   escalate)  │
+└─────────────┘    └──────────────┘    └─────────────┘
+       ↓                    ↓                    ↓
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐
+│  Check      │    │  Determine   │    │  Update     │
+│  Urgency    │    │  Action      │    │  State      │
+│  (requires_ │    │  Type        │    │  + Reward    │
+│   escalation)│    │              │    │             │
+└─────────────┘    └──────────────┘    └─────────────┘
+```
+
+### 📈 Reward Signal
+
+```
+Reward Calculation:
+┌─────────────────────────────────────────────────────────────┐
+│ Base Components:                                            │
+│ • Opening unread email:    +0.1                            │
+│ • Correct classification:   +0.4                            │
+│ • Grader score:            0.0 to 1.0                       │
+│ • Step cost:              -0.03                           │
+│                                                             │
+│ Penalties:                                                 │
+│ • Invalid action:          -0.5                            │
+│ • Hallucinated target:    -0.5                            │
+│ • Content too long:       -0.3                            │
+│ • Excessive repetition:   -0.5                            │
+│                                                             │
+│ Workflow Bonuses:                                           │
+│ • Correct escalation:      +0.3                            │
+│ • Proper resolution:       +0.2                            │
+│ • Episode success:         +0.3                            │
+└─────────────────────────────────────────────────────────────┘
+```
 
 The following baseline scores demonstrate the environment's difficulty and provide a reference for agent evaluation:
 
