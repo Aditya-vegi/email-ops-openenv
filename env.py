@@ -1,4 +1,5 @@
 from typing import List, Tuple, Optional, Dict, Any
+import copy
 from models import Email, Observation, Action, StepResult, EmailObservation, EmailAction
 from graders import grade_easy, grade_medium, grade_hard
 
@@ -50,6 +51,7 @@ class EmailEnv:
         self.queue: List[Email] = self._seed_emails()
         self.current = self.queue.pop(0) if self.queue else None
         self.steps = 0
+        self.current_step = 0  # Add current_step counter for strict compliance
         self.done = False
         self.history: List[str] = []
         self.total_reward = 0.0
@@ -78,7 +80,7 @@ class EmailEnv:
         if not self.current:
             return 0.0, "no email"
 
-        # Pass internal state to gradaders for deterministic checking
+        # Pass internal state to graders for deterministic checking
         if self.task == "easy":
             return grade_easy(self.current, action, self.internal_state)
         elif self.task == "medium":
@@ -92,11 +94,19 @@ class EmailEnv:
             self.done = True
 
     def step(self, action: Action) -> StepResult:
-        """Step function returning StepResult object for OpenEnv compliance"""
+        """Step function with strict "Done" logic and current_step tracking"""
         if self.done:
             return StepResult(self._obs("noop"), 0.0, True, {"reason": "episode done"})
 
+        # Increment current_step counter for strict compliance
+        self.current_step += 1
         self.steps += 1
+        
+        # CRITICAL: Check max_steps to prevent hanging
+        if self.current_step >= self.max_steps:
+            self.done = True
+            return StepResult(self._obs("max_steps_reached"), -1.0, True, {"reason": "max_steps_reached", "current_step": self.current_step})
+        
         score, reason = self._grade(action)
 
         # --- ENHANCED REWARD SIGNAL ---
@@ -220,7 +230,7 @@ class EmailEnv:
                 reward -= 0.2
         
         # --- LARGE PENALTY FOR EXCEEDING MAX STEPS ---
-        if self.steps > self.max_steps:
+        if self.current_step > self.max_steps:
             reward -= 1.0  # Large negative reward to discourage infinite loops
 
         # --- FINAL REWARD UPDATE (FIXED BUG) ---
@@ -229,15 +239,25 @@ class EmailEnv:
         # Clamp reward to reasonable range
         reward = max(-1.0, min(1.0, reward))
 
-        info = {"reason": reason, "steps": self.steps, "total_reward": self.total_reward, "internal_state": self.internal_state}
+        info = {"reason": reason, "steps": self.steps, "current_step": self.current_step, "total_reward": self.total_reward, "internal_state": self.internal_state}
         
         return StepResult(self._obs(action.action_type), reward, self.done, info)
 
     def state(self) -> Dict[str, Any]:
+        """Return deep copy of current state to prevent memory leaks between resets"""
         return {
             "steps": self.steps,
+            "current_step": self.current_step,
             "queue_remaining": len(self.queue) + (1 if self.current else 0),
             "total_reward": self.total_reward,
             "task": self.task,
-            "internal_state": self.internal_state
+            "internal_state": copy.deepcopy(self.internal_state),  # Deep copy to prevent memory leaks
+            "inbox": copy.deepcopy([{
+                "email_id": email.email_id,
+                "subject": email.subject,
+                "body": email.body,
+                "sender_role": email.sender_role,
+                "expected_priority": email.expected_priority,
+                "requires_escalation": email.requires_escalation
+            } for email in (self.queue + ([self.current] if self.current else []))])
         }

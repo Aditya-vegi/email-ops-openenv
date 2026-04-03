@@ -5,7 +5,7 @@ colorTo: green
 sdk: docker
 app_file: app.py
 pinned: false
-app_port: 8000
+app_port: 7860
 tags:
   - openenv
 ---

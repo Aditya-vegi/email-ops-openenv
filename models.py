@@ -1,15 +1,21 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any, Tuple, Literal
 
 class EmailObservation(BaseModel):
-    inbox_count: int
-    current_email_body: Optional[str]
-    folders: List[str]
+    """Strict OpenEnv observation interface with all required fields"""
+    inbox_size: int = Field(default=0, description="Number of emails in inbox")
+    current_email: Optional[Dict[str, Any]] = Field(default=None, description="Current email data")
+    available_actions: List[str] = Field(default_factory=list, description="Actions agent can take")
+    queue_size: int = Field(default=0, description="Total emails remaining")
+    last_action: Optional[str] = Field(default=None, description="Last action taken")
+    history: List[str] = Field(default_factory=list, description="Action history")
 
 class EmailAction(BaseModel):
-    action_type: str  # e.g., "MOVE", "REPLY", "DELETE"
-    target_id: str
-    payload: Optional[str] = None
+    """Strict OpenEnv action interface with type and payload"""
+    type: str = Field(..., description="Action type: classify, reply, escalate, resolve, next")
+    payload: Dict[str, Any] = Field(default_factory=dict, description="Action-specific data")
+    action_type: Optional[str] = Field(default=None, description="Legacy action_type field")
+    content: Optional[str] = Field(default=None, description="Legacy content field")
 
 # Legacy models for backward compatibility
 class Email(BaseModel):
