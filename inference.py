@@ -11,17 +11,21 @@ API_BASE_URL = os.environ["API_BASE_URL"]
 
 # Try to import and initialize OpenAI with error handling
 try:
-    import openai
-    openai.api_key = API_KEY
-    openai.api_base = API_BASE_URL
+    from openai import OpenAI
+    client = OpenAI(
+        api_key=API_KEY,
+        base_url=API_BASE_URL
+    )
     OPENAI_AVAILABLE = True
     print("OpenAI client initialized successfully")
 except ImportError as e:
     print(f"OpenAI import failed: {e}")
     OPENAI_AVAILABLE = False
+    client = None
 except Exception as e:
     print(f"OpenAI initialization failed: {e}")
     OPENAI_AVAILABLE = False
+    client = None
 
 API_BASE = os.getenv("SPACE_URL", "https://ADITYA-VEGI-email-ops-openenv.hf.space")
 MODEL = os.getenv("MODEL_NAME", "gpt-4o-mini")
@@ -65,9 +69,9 @@ Return ONLY a JSON object with this exact format:
 }}"""
     
     try:
-        if OPENAI_AVAILABLE:
+        if OPENAI_AVAILABLE and client:
             # CRITICAL: This API call MUST execute
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model=MODEL,
                 messages=[
                     {"role": "system", "content": "You are an email operations assistant that returns structured JSON responses."},
@@ -78,7 +82,7 @@ Return ONLY a JSON object with this exact format:
             )
             
             # Extract and parse the response
-            content = response['choices'][0]['message']['content'].strip()
+            content = response.choices[0].message.content.strip()
             
             # Try to parse as JSON
             try:
