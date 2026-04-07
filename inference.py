@@ -9,9 +9,11 @@ API_BASE_URL = os.environ.get("API_BASE_URL")
 API_KEY = os.environ.get("API_KEY")
 
 # Force client to use proxy - validator requires this for API_KEY usage detection
+# Explicitly disable http_client to avoid proxies argument error
 client = OpenAI(
     base_url=API_BASE_URL,
-    api_key=API_KEY
+    api_key=API_KEY,
+    http_client=None
 )
 
 API_BASE = os.getenv("SPACE_URL", "https://ADITYA-VEGI-email-ops-openenv.hf.space")
