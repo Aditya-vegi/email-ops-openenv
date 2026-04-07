@@ -4,12 +4,15 @@ from typing import List
 from openai import OpenAI
 import requests
 
-# MUST use the OpenAI client with these variables
-# Handle missing environment variables gracefully for local testing
-try:
-    client = OpenAI(api_key=os.getenv("API_KEY"), base_url=os.getenv("API_BASE_URL"))
-except:
-    client = None  # Fallback for local testing
+# These are specific variables that Meta/Scaler validator looks for
+API_BASE_URL = os.environ.get("API_BASE_URL")
+API_KEY = os.environ.get("API_KEY")
+
+# Force client to use proxy
+client = OpenAI(
+    base_url=API_BASE_URL,
+    api_key=API_KEY
+)
 
 API_BASE = os.getenv("SPACE_URL", "https://ADITYA-VEGI-email-ops-openenv.hf.space")
 MODEL = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
