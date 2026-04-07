@@ -1,39 +1,24 @@
 import os
 import asyncio
-from typing import List
+from typing import List, Dict, Any
 from openai import OpenAI
 import requests
+import json
 
-# These are specific variables that Meta/Scaler validator looks for
-API_BASE_URL = os.environ.get("API_BASE_URL")
-API_KEY = os.environ.get("API_KEY")
+# CRITICAL: Initialize OpenAI client using ONLY the specified pattern
+# This is EXACTLY what the validator requires
+API_KEY = os.environ["API_KEY"]
+API_BASE_URL = os.environ["API_BASE_URL"]
 
-# Force client to use proxy - validator requires this for API_KEY usage detection
-# Explicitly disable http_client to avoid proxies argument error
+# EXACT client initialization - NO extra parameters
 client = OpenAI(
-    base_url=API_BASE_URL,
     api_key=API_KEY,
-    http_client=None
+    base_url=API_BASE_URL
 )
 
 API_BASE = os.getenv("SPACE_URL", "https://ADITYA-VEGI-email-ops-openenv.hf.space")
-MODEL = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+MODEL = os.getenv("MODEL_NAME", "gpt-4o-mini")
 MAX_STEPS = 15
-
-# Verify critical environment variables are available
-def check_env_vars():
-    """Check if required environment variables are set"""
-    required_vars = ["API_KEY", "API_BASE_URL", "MODEL_NAME"]
-    missing_vars = [var for var in required_vars if not os.getenv(var)]
-    
-    if missing_vars:
-        print(f"Warning: Missing environment variables: {missing_vars}")
-        print("Using fallback values for local testing")
-        return False
-    return True
-
-# Environment variable check at startup
-ENV_VARS_OK = check_env_vars()
 
 def log_start(task_id: str):
     """Helper function to ensure exact logging format"""
@@ -47,19 +32,107 @@ def log_end(task_id: str, final_score: float, total_reward: float):
     """Helper function to ensure exact logging format"""
     print(f"[END] Task ID: {task_id} | Final Score: {final_score:.2f} | Total Reward: {total_reward:.2f}")
 
+def process_email_with_llm(subject: str, body: str) -> Dict[str, Any]:
+    """
+    Process email using LLM with strict error handling
+    CRITICAL: This function MUST execute at least one API call
+    """
+    
+    # Create the prompt for email processing
+    prompt = f"""
+    You are an email operations assistant. Analyze the following email and provide a structured response.
+
+    Email Subject: {subject}
+    Email Body: {body}
+
+    Classify this email into one category: Important, Spam, Promotion, or Personal
+    Generate a concise summary (max 50 words)
+    Assign priority: High, Medium, or Low
+    Generate a professional suggested reply
+
+    Return ONLY a JSON object with this exact format:
+    {{
+        "category": "Important/Spam/Promotion/Personal",
+        "summary": "concise summary",
+        "priority": "High/Medium/Low", 
+        "suggested_reply": "context-aware reply"
+    }}
+    """
+    
+    try:
+        # CRITICAL: This API call MUST execute
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": "You are an email operations assistant that returns structured JSON responses."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=300
+        )
+        
+        # Extract and parse the response
+        content = response.choices[0].message.content.strip()
+        
+        # Try to parse as JSON
+        try:
+            result = json.loads(content)
+            # Validate required fields
+            required_fields = ["category", "summary", "priority", "suggested_reply"]
+            for field in required_fields:
+                if field not in result:
+                    result[field] = f"Missing {field}"
+            return result
+        except json.JSONDecodeError:
+            # Fallback if JSON parsing fails
+            return {
+                "category": "Error",
+                "summary": "Failed to parse LLM response",
+                "priority": "Low",
+                "suggested_reply": "System temporarily unavailable"
+            }
+            
+    except Exception as e:
+        # MANDATORY: Graceful error handling
+        return {
+            "category": "Error",
+            "summary": f"LLM call failed: {str(e)}",
+            "priority": "Low",
+            "suggested_reply": "System temporarily unavailable"
+        }
+
 def choose_action(obs) -> dict:
-    # simple policy (deterministic baseline)
+    """
+    Simple deterministic policy that ALWAYS makes at least one LLM call
+    """
     cur = obs.get("current")
     if not cur:
         return {"action_type":"next","content":"move next"}
-
-    body = (cur.get("body") or "").lower()
-    if "down" in body or "asap" in body:
-        return {"action_type":"classify","content":"urgent"}
-    return {"action_type":"reply","content":"Hello, we are working on this with the team and will update soon."}
+    
+    # CRITICAL: Extract email data and process with LLM
+    subject = cur.get("subject", "No Subject")
+    body = cur.get("body", "No Body")
+    
+    # ALWAYS make an LLM call - NO CONDITIONAL SKIPPING
+    email_result = process_email_with_llm(subject, body)
+    
+    # Convert LLM result to action
+    category = email_result.get("category", "Important")
+    priority = email_result.get("priority", "Medium")
+    suggested_reply = email_result.get("suggested_reply", "Will respond appropriately")
+    
+    # Determine action based on analysis
+    if category == "Spam":
+        return {"action_type":"resolve","content":"Marked as spam and resolved"}
+    elif priority == "High" or "urgent" in body.lower() or "asap" in body.lower():
+        return {"action_type":"escalate","content":f"Escalated: {subject}"}
+    else:
+        return {"action_type":"reply","content":suggested_reply}
 
 async def main():
-    """Rewrite the main loop in inference.py with exact logging protocol"""
+    """
+    Main inference loop with strict compliance to all requirements
+    """
     # Run through all 3 tasks
     tasks = ["easy", "medium", "hard"]
     
