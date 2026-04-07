@@ -23,10 +23,14 @@ def root():
 @app.post("/reset")
 def reset(params: Optional[ResetRequest] = None):
     """Reset environment and return initial observation"""
+    # Handle different request formats
+    task = None
     if params and params.task:
-        env = EmailEnv(task=params.task)
-    else:
-        env = EmailEnv()
+        task = params.task
+    
+    # Create new environment instance
+    global env
+    env = EmailEnv(task=task) if task else EmailEnv()
     
     obs = env.reset()
     return obs.dict()
