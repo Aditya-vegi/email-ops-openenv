@@ -1,0 +1,18 @@
+# Email Operations Assistant Requirements
+# Meta PyTorch Hackathon 2026
+
+# Core dependencies
+openai>=1.0.0
+pydantic>=2.0.0
+
+# Optional: For enhanced logging
+colorlog>=6.0.0
+
+# Development dependencies
+pytest>=7.0.0
+black>=23.0.0
+flake8>=6.0.0
+
+# Production dependencies
+gunicorn>=21.0.0
+fastapi>=0.104.0

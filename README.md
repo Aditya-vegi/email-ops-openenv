@@ -1,5 +1,5 @@
 ---
-title: email-ops-openenv
+title: Email Operations OpenEnv
 colorFrom: blue
 colorTo: green
 sdk: docker
@@ -10,41 +10,33 @@ tags:
   - openenv
 ---
 
-# 📧 Email Ops OpenEnv Environment
+# 📧 Email Operations OpenEnv Environment
 
-## 📌 Overview
-
-This project implements a **real-world OpenEnv environment** that simulates an **Email Operations System**, where an AI agent performs:
-
-- Email triage  
-- Priority classification  
-- Response generation  
-- Escalation decision-making  
-
-The environment follows the **OpenEnv specification** and exposes:
-
-- `reset()`
-- `step(action)`
-- `state()`
+*A professional email triage and response system designed for AI agent training and evaluation.*
 
 ---
 
-## 🏗️ OpenM Environment Workflow & Architecture
+## 🌟 Overview
 
-### 1. Environment Initialization
+This project implements a **real-world OpenEnv environment** that simulates an **Email Operations System**, where an AI agent performs:
 
-The lifecycle begins with the `openm init` command, which generates a complete skeleton structure:
+- **Email Triage** - Intelligent priority classification and routing
+- **Response Generation** - Context-aware email composition  
+- **Decision Making** - Escalation vs. resolution workflow logic
+- **Multi-Email Management** - Queue processing and efficiency optimization
 
-```bash
-openm init email-ops-openenv
-```
+The environment follows the **OpenEnv specification** and provides a challenging yet realistic scenario for AI agents to develop professional email management capabilities.
 
-#### Generated Skeleton Structure:
+---
+
+## 🏗️ Architecture
+
+### System Components
 
 ```
 email-ops-openenv/
-├── README.md                 # Metadata for Hub discoverability
-├── pyproject.toml           # Dependencies & environment configuration
+├── README.md                 # Project documentation & metadata
+├── pyproject.toml           # Dependencies & environment configuration  
 ├── app.py                   # FastAPI server implementation
 ├── env.py                   # Core environment logic (OpenM spec)
 ├── models.py                # Data models and schemas
@@ -53,114 +45,73 @@ email-ops-openenv/
 ├── openenv.yaml           # OpenM environment configuration
 ├── Dockerfile             # Container deployment setup
 ├── requirements.txt       # Python dependencies
-├── .venv/                 # Virtual environment
-└── server/               # Additional server components
+└── .venv/                 # Virtual environment
 ```
 
-#### Key Components:
+### Key Design Principles
 
-- **README.md**: Contains structured metadata that makes the environment discoverable on the OpenM Hub
-- **pyproject.toml**: Installs all base dependencies and handles environment configuration
-- **Client Code**: Pre-constructed code that is standardized and interoperable with OpenM spec
-
-### 2. Dependency Management and Native Code
-
-For environments requiring non-Python components:
-
-- **Docker Integration**: Uses Docker to manage dependencies and define code outside Python ecosystem
-- **Adapters & Wrappers**: Built to ensure native environments comply with OpenM specification
-- **Multi-language Support**: Supports native game code, system integrations, and external services
-
-### 3. Local Testing and Development
-
-#### Running Locally:
-
-**Python Server (FastAPI):**
-```bash
-python app.py
-# Environment runs on http://localhost:8000
-```
-
-**Docker Container:**
-```bash
-openm build
-# Wraps docker build for convenience
-docker run -p 8000:8000 email-ops-openenv
-```
-
-**Interaction & Testing:**
-```python
-import requests
-
-# Connect to local environment
-response = requests.post("http://localhost:8000/reset")
-env_state = response.json()
-
-# Step through actions
-action = {"type": "classify", "priority": "urgent"}
-step_response = requests.post("http://localhost:8000/step", json=action)
-result = step_response.json()
-```
-
-### 4. Hub Deployment and Discovery
-
-#### Pushing to the Hub:
-```bash
-openm push
-# Uploads environment to OpenM Hub (HuggingFace Spaces)
-```
-
-#### Hub Features:
-- **Browser Testing**: Interact directly in web interface
-- **Command Testing**: Test with "Hello" or complex tasks like browser control
-- **Space Duplication**: Easy copying for personal modifications
-- **Community Discovery**: Find and use environments from other creators
-
-### 5. Scaling and Production Deployment
-
-#### Configuration for Large-Scale Tasks:
-```yaml
-# openenv.yaml configuration
-scaling:
-  workers: 4
-  concurrent_environments: true
-  resource_allocation:
-    cpu_fraction: 0.1  # Small fraction of GPU cost
-    memory: "2GB"
-```
-
-#### Cost Management:
-- **CPU Cost**: Small fraction of GPU training cost
-- **Personal Servers**: Practical for hosting on personal infrastructure
-- **Free Testing**: Users encouraged to run locally for extensive testing
-- **Shared Resources**: Hub host pays for compute, users benefit from shared infrastructure
+- **OpenM Compliant** - Follows OpenEnv specification exactly
+- **Modular Architecture** - Clean separation of concerns
+- **Type Safety** - Full Pydantic model validation
+- **Extensible** - Easy to add new email types and scenarios
+- **Production Ready** - Docker deployment with proper logging
 
 ---
 
-## 🚀 Live Deployment
+## 🚀 Quick Start
 
-👉 https://ADITYA-VEGI-email-ops-openenv.hf.space/
+### Prerequisites
 
-### ✔ Deployment Status
+- Python 3.8+
+- Docker (optional, for containerized deployment)
+- Git (for version control)
 
-- `/reset` endpoint → ✅ Working  
-- Docker container → ✅ Running  
-- Public Space → ✅ Accessible  
-- OpenM Hub → ✅ Discoverable  
-- GitHub Sync → ✅ Updated  
+### Local Development
+
+```bash
+# Clone and setup
+git clone https://github.com/Aditya-vegi/email-ops-openenv.git
+cd email-ops-openenv
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# Run locally
+python app.py
+
+# Test the environment
+curl -X POST http://localhost:7860/reset
+curl -X POST http://localhost:7860/step \
+  -H "Content-Type: application/json" \
+  -d '{"type":"classify","priority":"urgent"}'
+```
+
+### Docker Deployment
+
+```bash
+# Build and run container
+docker build -t email-ops-openenv .
+docker run -p 7860:7860 email-ops-openenv
+```
 
 ---
 
 ## 🎯 Environment Objective
 
-The agent must:
+The AI agent must demonstrate competence in:
 
-- Classify email priority correctly  
-- Generate appropriate responses  
-- Decide whether to escalate or resolve  
-- Efficiently process multiple emails  
-- Handle time-sensitive communications  
-- Manage resource constraints  
+**Core Skills**
+- **Priority Classification** - Correctly identify urgent vs. routine communications
+- **Contextual Response** - Generate appropriate replies for different scenarios
+- **Workflow Decision** - Choose between escalation and resolution based on email content
+- **Efficiency Management** - Process multiple emails within resource constraints
+- **Professional Communication** - Maintain appropriate tone and business etiquette
+
+**Success Metrics**
+- **Accuracy** - Correct priority classification (>85% target)
+- **Relevance** - Contextually appropriate responses
+- **Efficiency** - Minimal steps while maintaining quality
+- **Decision Quality** - Appropriate escalation vs. resolution choices
 
 ---
 
@@ -168,132 +119,41 @@ The agent must:
 
 This environment models actual workflows used in:
 
-- **Customer Support Systems**: Automated ticket triage and response
-- **IT Incident Response**: Priority-based escalation handling  
-- **Business Communication Pipelines**: Executive email management
-- **Help Desk Operations**: Multi-tier support simulation
+### Customer Support Systems
+- **Automated Ticket Triage** - Priority-based email routing
+- **Response Generation** - Template-based and contextual replies
+- **Escalation Logic** - Urgent issue detection and management notification
 
-This environment represents an **innovative approach** to training AI agents in professional email management. The **multi-task learning framework** allows agents to develop **creative problem-solving strategies** while maintaining **real-world applicability**. The **unique reward structure** encourages **efficient decision-making** and **proper workflow execution**.
+### IT Operations
+- **Incident Response** - Critical system outage communications
+- **Service Desk Integration** - Multi-tier support coordination
+- **Change Management** - System update and notification workflows
 
-#### Simulated Challenges:
-
-- **Time-sensitive emails**: Urgent vs. normal priority handling
-- **Multi-email queue management**: Batch processing and efficiency
-- **Decision-based workflows**: Escalation vs. resolution logic
-- **Resource constraints**: Limited processing capacity simulation
-- **Communication patterns**: Different sender roles and expectations
+### Business Communication
+- **Executive Email Management** - High-priority correspondence handling
+- **Administrative Support** - Routine business communication automation
+- **Cross-Department Coordination** - Multi-team workflow optimization
 
 ---
 
-## 📊 Agent Observation Structure
+## 📊 Environment Design
 
-The agent receives structured observations that include the current email and environment state:
+### Observation Space
 
-### 📧 What the Agent Sees
-
-```
-Observation Structure:
-┌─────────────────────────────────────────────────────────────┐
-│ current: {                                                 │
-│   "email_id": 1,                                           │
-│   "subject": "Production server down",                     │
-│   "body": "Prod is down. Fix ASAP.",                       │
-│   "sender_role": "boss",                                   │
-│   "expected_priority": "urgent",                          │
-│   "requires_escalation": true                              │
-│ },                                                         │
-│ queue_size: 3,                                             │
-│ last_action: null,                                         │
-│ history: []                                                │
-└─────────────────────────────────────────────────────────────┘
-
-Available Actions:
-- classify: Set email priority (urgent/normal/low)
-- reply: Generate response to email
-- escalate: Forward urgent issues to management
-- resolve: Handle and close routine emails
-- next: Move to next email in queue
-```
-
-### 🎯 Decision Flow
-
-```
-Agent Decision Process:
-┌─────────────┐    ┌──────────────┐    ┌─────────────┐
-│  Observe    │ →  │  Analyze     │ →  │  Act        │
-│  Email      │    │  Priority    │    │  (classify/  │
-│  + Queue    │    │  + Context   │    │   reply/     │
-│             │    │              │    │   escalate)  │
-└─────────────┘    └──────────────┘    └─────────────┘
-       ↓                    ↓                    ↓
-┌─────────────┐    ┌──────────────┐    ┌─────────────┐
-│  Check      │    │  Determine   │    │  Update     │
-│  Urgency    │    │  Action      │    │  State      │
-│  (requires_ │    │  Type        │    │  + Reward    │
-│   escalation)│    │              │    │             │
-└─────────────┘    └──────────────┘    └─────────────┘
-```
-
-### 📈 Reward Signal
-
-```
-Reward Calculation:
-┌─────────────────────────────────────────────────────────────┐
-│ Base Components:                                            │
-│ • Opening unread email:    +0.1                            │
-│ • Correct classification:   +0.4                            │
-│ • Grader score:            0.0 to 1.0                       │
-│ • Step cost:              -0.03                           │
-│                                                             │
-│ Penalties:                                                 │
-│ • Invalid action:          -0.5                            │
-│ • Hallucinated target:    -0.5                            │
-│ • Content too long:       -0.3                            │
-│ • Excessive repetition:   -0.5                            │
-│                                                             │
-│ Workflow Bonuses:                                           │
-│ • Correct escalation:      +0.3                            │
-│ • Proper resolution:       +0.2                            │
-│ • Episode success:         +0.3                            │
-└─────────────────────────────────────────────────────────────┘
-```
-
-The following baseline scores demonstrate the environment's difficulty and provide a reference for agent evaluation:
-
-### **Rule-Based Baseline Agent**
-- **Easy Task**: **85.3%** success rate (Mean reward: 0.82)
-- **Medium Task**: **78.9%** success rate (Mean reward: 0.76) 
-- **Hard Task**: **71.2%** success rate (Mean reward: 0.68)
-- **Overall**: **78.5%** success rate across all tasks
-
-### **Performance Headroom**
-- **Maximum Possible Score**: 100% (perfect execution)
-- **Current Baseline**: 78.5%
-- **Improvement Opportunity**: **21.5%** headroom for advanced agents
-- **Human-Level Target**: 90%+ success rate achievable
-
-### **Scoring Distribution**
-- **Classification Accuracy**: 92% (easy task)
-- **Response Quality**: 81% (medium task)  
-- **Workflow Efficiency**: 74% (hard task)
-- **Exploit Prevention**: 100% (no invalid actions)
-
-*These scores were obtained using the deterministic internal state grading system and represent the difficulty ceiling for the environment.*
-
-### 📥 Observation Space
+The agent receives structured observations including:
 
 ```json
 {
   "current": {
     "email_id": 1,
     "subject": "Production server down",
-    "body": "Fix ASAP",
-    "sender_role": "boss",
+    "body": "Critical system outage - fix ASAP",
+    "sender_role": "boss", 
     "expected_priority": "urgent",
     "requires_escalation": true
   },
   "queue_size": 3,
-  "last_action": "reply",
+  "last_action": "classify",
   "history": ["classify", "reply"],
   "performance_metrics": {
     "accuracy": 0.85,
@@ -303,30 +163,36 @@ The following baseline scores demonstrate the environment's difficulty and provi
 }
 ```
 
-### 🎮 Action Space
+### Action Space
 
 ```json
 {
-  "type": "classify|reply|escalate|ignore",
-  "priority": "urgent|high|normal|low",
+  "type": "classify|reply|escalate|resolve|next",
+  "priority": "urgent|high|normal|low", 
   "response": "Generated email response text",
   "escalation_reason": "Reason for escalation if applicable"
 }
 ```
 
-### 🏆 Reward Structure
+### Reward Structure
 
-- **Correct Classification**: +1.0 points
-- **Appropriate Response**: +2.0 points  
-- **Correct Escalation**: +3.0 points
-- **Time Efficiency**: +0.5 points per minute saved
-- **Error Penalties**: -1.0 to -5.0 points
+- **Positive Actions**
+  - Correct classification: +1.0 points
+  - Appropriate response: +2.0 points
+  - Correct escalation: +3.0 points
+  - Time efficiency: +0.5 points per minute saved
+
+- **Penalties**
+  - Wrong classification: -1.0 to -5.0 points
+  - Inappropriate response: -2.0 points
+  - Missed escalation: -3.0 points
+  - Excessive steps: -0.1 points per step
 
 ---
 
-## 🛠️ Development and Customization
+## 🛠️ Development Guide
 
-### Adding New Email Types:
+### Adding New Email Types
 
 1. **Update Models** (`models.py`):
 ```python
@@ -349,8 +215,9 @@ def grade_email_handling(self, action, expected):
     # Custom evaluation logic
 ```
 
-### Integration with External Systems:
+### Integration Examples
 
+**External Systems Integration**
 - **Email APIs**: Connect to Gmail, Outlook, or custom email servers
 - **Notification Systems**: Integrate Slack, Teams, or SMS alerts
 - **CRM Systems**: Link with Salesforce, HubSpot, or custom CRM
@@ -358,73 +225,95 @@ def grade_email_handling(self, action, expected):
 
 ---
 
-## 📈 Performance Metrics and Analytics
+## 📈 Performance Analytics
 
-### 🎯 Task Success Criteria
+### Baseline Performance
 
-### **Task 1: Easy Classification**
-**Objective**: Classify email priority correctly
-**Success Criteria**: Score 1.0 if email is correctly classified with expected priority
-**Grading Logic**: 
-- Full score (1.0): Exact priority match (urgent/normal/low)
-- Partial score (0.5): Partial match or substring match
-- No score (0.0): Wrong priority or no match
+Our rule-based agent achieves:
 
-**Expected Performance**: 85%+ success rate
+| Task | Difficulty | Success Rate | Mean Reward | Performance Notes |
+|-------|-------------|---------------|--------------|-------------------|
+| Easy  | Classification | 85.3% | 0.82 | High accuracy on priority detection |
+| Medium | Response Generation | 78.9% | 0.76 | Good contextual relevance |
+| Hard  | Workflow Execution | 71.2% | 0.68 | Complex decision-making |
 
----
+### Performance Headroom
 
-### **Task 2: Medium Reply**
-**Objective**: Generate appropriate response to email
-**Success Criteria**: Score 1.0 if reply matches email context and tone
-**Grading Logic**:
-- Full score (1.0): Contextually appropriate response (server issue → investigation, invoice → details, bug → logged)
-- Partial score (0.5): Generic professional response
-- No score (0.0): Inappropriate or insufficient response
+- **Maximum Score**: 100% (perfect execution)
+- **Current Baseline**: 78.5% average success rate
+- **Improvement Opportunity**: 21.5% headroom for advanced agents
+- **Human-Level Target**: 90%+ success rate achievable
 
-**Expected Performance**: 78%+ success rate
+### Evaluation Metrics
 
----
-
-### **Task 3: Hard Workflow**
-**Objective**: Execute proper escalation/resolution workflow
-**Why it's hard**: Task 3 requires the agent to reason through a multi-step dependency: fetching a policy, cross-referencing a sender, and drafting a specific response. The agent must correctly identify which emails require escalation vs. resolution, maintain internal state consistency across multiple actions, and execute the proper workflow sequence while managing time constraints.
-
-**Success Criteria**: Score 1.0 if:
-- Email requiring escalation is escalated AND
-- Email requiring resolution is resolved AND
-- Workflow efficiency score ≥ 0.8
-
-**Grading Logic**:
-- Step 1 (0.33): Correct action type for email type
-- Step 2 (0.33): Content quality and specificity  
-- Step 3 (0.34): Workflow efficiency and decision quality
-- **Total Score**: Sum of all three steps
-
-**Expected Performance**: 71%+ success rate
+- **Classification Accuracy**: 92% (easy task)
+- **Response Quality**: 81% (medium task)  
+- **Workflow Efficiency**: 74% (hard task)
+- **Exploit Prevention**: 100% (no invalid actions)
+- **Resource Efficiency**: Optimized for production deployment
 
 ---
 
-### **Scoring Summary**
-| Task | Max Score | Target | Baseline |
-|------|-----------|--------|---------|
-| Easy | 1.0 | 0.85 | 0.853 |
-| Medium | 1.0 | 0.78 | 0.789 |
-| Hard | 1.0 | 0.71 | 0.712 |
-| **Overall** | **1.0** | **0.78** | **0.785** |
+## 🧪 Testing & Validation
 
-### Key Performance Indicators (KPIs):
-
-- **Classification Accuracy**: Percentage of correctly prioritized emails
-- **Response Quality**: Human-rated response appropriateness
-- **Escalation Accuracy**: Correct escalation decisions
-- **Processing Speed**: Emails handled per hour
-- **Resource Efficiency**: CPU/memory usage per email
-
-### Monitoring and Logging:
+### Environment Compliance Tests
 
 ```python
-# Built-in analytics
+# Test OpenEnv specification compliance
+python -m pytest test_compliance.py
+
+# Test all three tasks
+python inference.py
+
+# Run validation suite
+python test_compliance.py --full
+```
+
+### Quality Assurance
+
+- **Unit Tests**: Comprehensive test coverage for all components
+- **Integration Tests**: End-to-end workflow validation
+- **Performance Tests**: Load testing and benchmarking
+- **Security Tests**: Input validation and exploit prevention
+- **Compatibility Tests**: Cross-platform and Python version testing
+
+---
+
+## 🚀 Deployment
+
+### Production Configuration
+
+```yaml
+# openenv.yaml for production deployment
+name: email-ops-openenv
+version: "1.0.0"
+description: "Professional email triage and response environment"
+entrypoint: "env:EmailEnv"
+
+scaling:
+  workers: 4
+  concurrent_environments: true
+  resource_allocation:
+    cpu_fraction: 0.1
+    memory: "2GB"
+```
+
+### Docker Configuration
+
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+EXPOSE 7860
+CMD ["python", "app.py"]
+```
+
+### Monitoring & Logging
+
+```python
+# Built-in performance monitoring
 env.get_performance_report()
 env.export_metrics(format="json|csv")
 env.real_time_monitoring()
@@ -432,78 +321,25 @@ env.real_time_monitoring()
 
 ---
 
-## 🔧 Configuration and Setup
+## 🤝 Contributing
 
-### Environment Variables:
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-```bash
-# .env configuration
-OPENENV_WORKERS=4
-OPENENV_DEBUG=false
-OPENENV_LOG_LEVEL=INFO
-OPENENV_MAX_QUEUE_SIZE=100
-```
+### Development Workflow
 
-### Docker Configuration:
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Make** your changes with comprehensive tests
+4. **Submit** a pull request with clear description
+5. **Ensure** all tests pass before submission
 
-```dockerfile
-# Optimized for production
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 8000
-CMD ["python", "app.py"]
-```
+### Code Standards
 
----
-
-## 🤝 Contributing to OpenM Ecosystem
-
-### Community Guidelines:
-
-1. **Follow OpenM Spec**: Ensure compliance with environment standards
-2. **Comprehensive Testing**: Include unit tests and integration tests
-3. **Documentation**: Maintain clear README and code comments
-4. **Version Control**: Use semantic versioning for releases
-5. **Performance**: Optimize for efficiency and scalability
-
-### Submitting Environments:
-
-```bash
-# Prepare for submission
-openm validate  # Validate environment compliance
-openm test      # Run comprehensive tests
-openm package   # Create distribution package
-openm submit    # Submit to OpenM Hub
-```
-
----
-
-## 📚 Learning Resources and Tutorials
-
-### Getting Started:
-
-1. **[OpenM Documentation](https://openm.ai/docs)**: Official documentation
-2. **[Environment Tutorial](https://openm.ai/tutorials/env-creation)**: Step-by-step guide
-3. **[Video Walkthrough](https://openm.ai/videos/getting-started)**: Visual learning
-4. **[Community Forum](https://openm.ai/community)**: Get help and share ideas
-
-### Advanced Topics:
-
-- **Multi-Agent Environments**: Building collaborative scenarios
-- **Continuous Integration**: Automated testing and deployment
-- **Performance Optimization**: Advanced scaling techniques
-- **Custom Metrics**: Creating specialized evaluation criteria
-
----
-
-## 🏗️ Architecture Diagram
-
-The system follows a modular OpenEnv architecture:
-<img width="1408" height="768" alt="Gemini_Generated_Image_8ntoqr8ntoqr8nto" src="https://github.com/user-attachments/assets/f7472120-a709-40cb-b1c8-e3ade3f539e5" />
-
+- **PEP 8 Compliance** - Follow Python style guidelines
+- **Type Hints** - Full type annotation coverage
+- **Documentation** - Clear docstrings and comments
+- **Testing** - Include tests for new features
+- **Performance** - Consider efficiency and scalability
 
 ---
 
@@ -513,27 +349,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🎯 Quick Start Guide
+## 🙏 Acknowledgments
 
-```bash
-# Clone and setup
-git clone https://github.com/Aditya-vegi/email-ops-openenv.git
-cd email-ops-openenv
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-
-# Run locally
-python app.py
-
-# Test the environment
-curl -X POST http://localhost:8000/reset
-curl -X POST http://localhost:8000/step -H "Content-Type: application/json" -d '{"type":"classify","priority":"urgent"}'
-
-# Deploy to Hub
-openm push
-```
+Built with ❤️ for the OpenM Community and Meta PyTorch Hackathon 2026.
 
 ---
 
-*Built with ❤️ for the OpenM Community*
+## 🔗 Links
+
+- **Live Demo**: [https://ADITYA-VEGI-email-ops-openenv.hf.space](https://ADITYA-VEGI-email-ops-openenv.hf.space)
+- **GitHub Repository**: [https://github.com/Aditya-vegi/email-ops-openenv](https://github.com/Aditya-vegi/email-ops-openenv)
+- **OpenM Documentation**: [https://openm.ai/docs](https://openm.ai/docs)
+- **Issues & Support**: [GitHub Issues](https://github.com/Aditya-vegi/email-ops-openenv/issues)
+
+---
+
+*Built for professional email management AI training and evaluation.*

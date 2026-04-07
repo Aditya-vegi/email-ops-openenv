@@ -7,7 +7,7 @@ import requests
 # MUST use the OpenAI client with these variables
 # Handle missing environment variables gracefully for local testing
 try:
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), base_url=os.getenv("API_BASE_URL"))
+    client = OpenAI(api_key=os.getenv("API_KEY"), base_url=os.getenv("API_BASE_URL"))
 except:
     client = None  # Fallback for local testing
 
@@ -18,7 +18,7 @@ MAX_STEPS = 15
 # Verify critical environment variables are available
 def check_env_vars():
     """Check if required environment variables are set"""
-    required_vars = ["OPENAI_API_KEY", "API_BASE_URL", "MODEL_NAME"]
+    required_vars = ["API_KEY", "API_BASE_URL", "MODEL_NAME"]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     
     if missing_vars:
