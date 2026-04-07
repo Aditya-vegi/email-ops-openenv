@@ -9,23 +9,12 @@ import json
 API_KEY = os.environ["API_KEY"]
 API_BASE_URL = os.environ["API_BASE_URL"]
 
-# Try to import and initialize OpenAI with error handling
-try:
-    from openai import OpenAI
-    client = OpenAI(
-        api_key=API_KEY,
-        base_url=API_BASE_URL
-    )
-    OPENAI_AVAILABLE = True
-    print("OpenAI client initialized successfully")
-except ImportError as e:
-    print(f"OpenAI import failed: {e}")
-    OPENAI_AVAILABLE = False
-    client = None
-except Exception as e:
-    print(f"OpenAI initialization failed: {e}")
-    OPENAI_AVAILABLE = False
-    client = None
+# MANDATORY: Initialize OpenAI client - NO ERROR HANDLING ALLOWED
+from openai import OpenAI
+client = OpenAI(
+    api_key=API_KEY,
+    base_url=API_BASE_URL
+)
 
 API_BASE = os.getenv("SPACE_URL", "https://ADITYA-VEGI-email-ops-openenv.hf.space")
 MODEL = os.getenv("MODEL_NAME", "gpt-4o-mini")
@@ -68,70 +57,34 @@ Return ONLY a JSON object with this exact format:
     "suggested_reply": "context-aware reply"
 }}"""
     
+    # CRITICAL: This API call MUST execute - NO FALLBACK ALLOWED
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {"role": "system", "content": "You are an email operations assistant that returns structured JSON responses."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.3,
+        max_tokens=300
+    )
+    
+    # Extract and parse the response
+    content = response.choices[0].message.content.strip()
+    
+    # Try to parse as JSON
     try:
-        if OPENAI_AVAILABLE and client:
-            # CRITICAL: This API call MUST execute
-            response = client.chat.completions.create(
-                model=MODEL,
-                messages=[
-                    {"role": "system", "content": "You are an email operations assistant that returns structured JSON responses."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.3,
-                max_tokens=300
-            )
-            
-            # Extract and parse the response
-            content = response.choices[0].message.content.strip()
-            
-            # Try to parse as JSON
-            try:
-                result = json.loads(content)
-                # Validate required fields
-                required_fields = ["category", "summary", "priority", "suggested_reply"]
-                for field in required_fields:
-                    if field not in result:
-                        result[field] = f"Missing {field}"
-                return result
-            except json.JSONDecodeError:
-                # Fallback if JSON parsing fails
-                return {
-                    "category": "Error",
-                    "summary": "Failed to parse LLM response",
-                    "priority": "Low",
-                    "suggested_reply": "System temporarily unavailable"
-                }
-        else:
-            # Fallback mock processing when OpenAI is not available
-            print("OpenAI not available - using mock processing")
-            body_lower = body.lower()
-            
-            if "spam" in body_lower or "promotion" in body_lower:
-                category = "Spam"
-                priority = "Low"
-                suggested_reply = "Marked as spam"
-            elif "urgent" in body_lower or "asap" in body_lower or "interview" in body_lower:
-                category = "Important"
-                priority = "High"
-                suggested_reply = "Thank you for the update. I will address this immediately."
-            else:
-                category = "Personal"
-                priority = "Medium"
-                suggested_reply = "Thank you for your message. I will review and respond accordingly."
-            
-            return {
-                "category": category,
-                "summary": f"Email about {subject.lower()}",
-                "priority": priority,
-                "suggested_reply": suggested_reply
-            }
-            
-    except Exception as e:
-        # MANDATORY: Graceful error handling
-        print(f"LLM processing error: {e}")
+        result = json.loads(content)
+        # Validate required fields
+        required_fields = ["category", "summary", "priority", "suggested_reply"]
+        for field in required_fields:
+            if field not in result:
+                result[field] = f"Missing {field}"
+        return result
+    except json.JSONDecodeError:
+        # Fallback if JSON parsing fails - but still return structured response
         return {
             "category": "Error",
-            "summary": f"LLM call failed: {str(e)}",
+            "summary": "Failed to parse LLM response",
             "priority": "Low",
             "suggested_reply": "System temporarily unavailable"
         }
