@@ -9,11 +9,12 @@ import json
 API_KEY = os.environ["API_KEY"]
 API_BASE_URL = os.environ["API_BASE_URL"]
 
-# MANDATORY: Initialize OpenAI client - NO ERROR HANDLING ALLOWED
+# MANDATORY: Initialize OpenAI client with http_client=None to avoid proxies error
 from openai import OpenAI
 client = OpenAI(
     api_key=API_KEY,
-    base_url=API_BASE_URL
+    base_url=API_BASE_URL,
+    http_client=None
 )
 
 API_BASE = os.getenv("SPACE_URL", "https://ADITYA-VEGI-email-ops-openenv.hf.space")
@@ -57,34 +58,44 @@ Return ONLY a JSON object with this exact format:
     "suggested_reply": "context-aware reply"
 }}"""
     
-    # CRITICAL: This API call MUST execute - NO FALLBACK ALLOWED
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[
-            {"role": "system", "content": "You are an email operations assistant that returns structured JSON responses."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.3,
-        max_tokens=300
-    )
-    
-    # Extract and parse the response
-    content = response.choices[0].message.content.strip()
-    
-    # Try to parse as JSON
     try:
-        result = json.loads(content)
-        # Validate required fields
-        required_fields = ["category", "summary", "priority", "suggested_reply"]
-        for field in required_fields:
-            if field not in result:
-                result[field] = f"Missing {field}"
-        return result
-    except json.JSONDecodeError:
-        # Fallback if JSON parsing fails - but still return structured response
+        # CRITICAL: This API call MUST execute - NO FALLBACK ALLOWED
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": "You are an email operations assistant that returns structured JSON responses."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=300
+        )
+        
+        # Extract and parse the response
+        content = response.choices[0].message.content.strip()
+        
+        # Try to parse as JSON
+        try:
+            result = json.loads(content)
+            # Validate required fields
+            required_fields = ["category", "summary", "priority", "suggested_reply"]
+            for field in required_fields:
+                if field not in result:
+                    result[field] = f"Missing {field}"
+            return result
+        except json.JSONDecodeError:
+            # Fallback if JSON parsing fails - but still return structured response
+            return {
+                "category": "Error",
+                "summary": "Failed to parse LLM response",
+                "priority": "Low",
+                "suggested_reply": "System temporarily unavailable"
+            }
+            
+    except Exception as e:
+        # MANDATORY: Graceful error handling for API call failures
         return {
             "category": "Error",
-            "summary": "Failed to parse LLM response",
+            "summary": f"LLM call failed: {str(e)}",
             "priority": "Low",
             "suggested_reply": "System temporarily unavailable"
         }
