@@ -1,20 +1,18 @@
 import os
 import asyncio
 from typing import List, Dict, Any
-from openai import OpenAI
+import openai
 import requests
 import json
 
-# CRITICAL: Initialize OpenAI client using ONLY the specified pattern
+# CRITICAL: Initialize OpenAI using ONLY the specified pattern
 # This is EXACTLY what the validator requires
 API_KEY = os.environ["API_KEY"]
 API_BASE_URL = os.environ["API_BASE_URL"]
 
 # EXACT client initialization - NO extra parameters
-client = OpenAI(
-    api_key=API_KEY,
-    base_url=API_BASE_URL
-)
+openai.api_key = API_KEY
+openai.api_base = API_BASE_URL
 
 API_BASE = os.getenv("SPACE_URL", "https://ADITYA-VEGI-email-ops-openenv.hf.space")
 MODEL = os.getenv("MODEL_NAME", "gpt-4o-mini")
@@ -39,29 +37,27 @@ def process_email_with_llm(subject: str, body: str) -> Dict[str, Any]:
     """
     
     # Create the prompt for email processing
-    prompt = f"""
-    You are an email operations assistant. Analyze the following email and provide a structured response.
+    prompt = f"""You are an email operations assistant. Analyze the following email and provide a structured response.
 
-    Email Subject: {subject}
-    Email Body: {body}
+Email Subject: {subject}
+Email Body: {body}
 
-    Classify this email into one category: Important, Spam, Promotion, or Personal
-    Generate a concise summary (max 50 words)
-    Assign priority: High, Medium, or Low
-    Generate a professional suggested reply
+Classify this email into one category: Important, Spam, Promotion, or Personal
+Generate a concise summary (max 50 words)
+Assign priority: High, Medium, or Low
+Generate a professional suggested reply
 
-    Return ONLY a JSON object with this exact format:
-    {{
-        "category": "Important/Spam/Promotion/Personal",
-        "summary": "concise summary",
-        "priority": "High/Medium/Low", 
-        "suggested_reply": "context-aware reply"
-    }}
-    """
+Return ONLY a JSON object with this exact format:
+{{
+    "category": "Important/Spam/Promotion/Personal",
+    "summary": "concise summary",
+    "priority": "High/Medium/Low", 
+    "suggested_reply": "context-aware reply"
+}}"""
     
     try:
         # CRITICAL: This API call MUST execute
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": "You are an email operations assistant that returns structured JSON responses."},
@@ -72,7 +68,7 @@ def process_email_with_llm(subject: str, body: str) -> Dict[str, Any]:
         )
         
         # Extract and parse the response
-        content = response.choices[0].message.content.strip()
+        content = response['choices'][0]['message']['content'].strip()
         
         # Try to parse as JSON
         try:
