@@ -17,6 +17,18 @@ API_BASE = os.getenv("SPACE_URL", "https://ADITYA-VEGI-email-ops-openenv.hf.spac
 MODEL = os.getenv("MODEL_NAME", "gpt-4o-mini")
 MAX_STEPS = 15
 
+def safe_score(score):
+    try:
+        score = float(score)
+    except:
+        return 0.5
+    
+    if score <= 0:
+        return 0.01
+    elif score >= 1:
+        return 0.99
+    return score
+
 def log_start(task_id: str):
     """Helper function to ensure exact logging format"""
     print(f"[START] Task ID: {task_id}")
@@ -154,7 +166,7 @@ async def main():
                 print(f"Step {step}: {action}")
                 
                 resp = requests.post(f"{API_BASE}/step", json=a, timeout=30).json()
-                reward = float(resp.get("reward") or 0.0)
+                reward = safe_score(float(resp.get("reward") or 0.0))
                 done = bool(resp.get("done"))
                 
                 rewards.append(reward)
@@ -177,14 +189,14 @@ async def main():
                     pass  # Ignore errors for forced end
             
             # Calculate scores with strict range (0, 1)
-            final_score = max(0.01, min(sum(rewards) / max(1, len(rewards)), 0.99))
-            total_reward = sum(rewards)
+            final_score = safe_score(sum(rewards) / max(1, len(rewards)))
+            total_reward = safe_score(sum(rewards))
             success = final_score >= 0.5
             
         except Exception as e:
             print(f"Error in task {task_id}: {e}")
-            final_score = 0.01  # Ensure strict range (0, 1)
-            total_reward = 0.0
+            final_score = safe_score(0.01)
+            total_reward = safe_score(0.0)
             success = False
             # Only log errors if absolutely necessary - validator doesn't like extra logs
             pass
