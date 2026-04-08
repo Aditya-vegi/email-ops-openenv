@@ -20,47 +20,47 @@ def safe_score(score):
 def grade_easy(email: Email, action: Action, internal_state: Dict[str, Any]) -> Tuple[float, str]:
     """Easy task: Classify email priority correctly - deterministic grading"""
     if action.action_type != "classify":
-        return safe_score(0.0), "wrong action type"
+        return safe_score(0.01), "wrong action type"
     
     # Deterministic check: Verify email was actually classified in internal state
     email_id = email.email_id
     if email_id not in internal_state.get("classified_emails", []):
-        return safe_score(0.0), "email not marked as classified in internal state"
+        return safe_score(0.01), "email not marked as classified in internal state"
     
     expected = email.expected_priority
     actual = action.content.lower()
     
     if actual == expected:
-        return safe_score(1.0), f"correct priority: {expected} (verified in internal state)"
+        return safe_score(0.99), f"correct priority: {expected} (verified in internal state)"
     elif expected in actual or actual in expected:
         return safe_score(0.5), f"partial match: {actual} vs {expected} (verified in internal state)"
     else:
-        return safe_score(0.0), f"wrong priority: {actual} vs {expected} (verified in internal state)"
+        return safe_score(0.01), f"wrong priority: {actual} vs {expected} (verified in internal state)"
 
 def grade_medium(email: Email, action: Action, internal_state: Dict[str, Any]) -> Tuple[float, str]:
     """Medium task: Generate appropriate reply - deterministic grading"""
     if action.action_type != "reply":
-        return safe_score(0.0), "wrong action type"
+        return safe_score(0.01), "wrong action type"
     
     # Deterministic check: Verify email was actually replied to in internal state
     email_id = email.email_id
     if email_id not in internal_state.get("replied_emails", []):
-        return safe_score(0.0), "email not marked as replied in internal state"
+        return safe_score(0.01), "email not marked as replied in internal state"
     
     reply = action.content.lower()
     subject = email.subject.lower()
     
     # Check for appropriate response content
     if "server down" in subject and any(word in reply for word in ["investigating", "working", "update", "30 minutes"]):
-        return safe_score(1.0), "appropriate server issue response (verified in internal state)"
+        return safe_score(0.99), "appropriate server issue response (verified in internal state)"
     elif "invoice" in subject and any(word in reply for word in ["invoice", "details", "clarification", "end of day"]):
-        return safe_score(1.0), "appropriate invoice response (verified in internal state)"
+        return safe_score(0.99), "appropriate invoice response (verified in internal state)"
     elif "bug" in subject and any(word in reply for word in ["logged", "development", "sprint", "progress"]):
-        return safe_score(1.0), "appropriate bug report response (verified in internal state)"
+        return safe_score(0.99), "appropriate bug report response (verified in internal state)"
     elif len(reply) > 20 and any(word in reply for word in ["hello", "thank", "working", "update"]):
         return safe_score(0.5), "generic but professional response (verified in internal state)"
     else:
-        return safe_score(0.0), "inappropriate or insufficient response (verified in internal state)"
+        return safe_score(0.01), "inappropriate or insufficient response (verified in internal state)"
 
 def grade_hard(email: Email, action: Action, internal_state: Dict[str, Any]) -> Tuple[float, str]:
     """Hard task: Multi-step workflow with dependency checking - deterministic grading
@@ -82,10 +82,10 @@ def grade_hard(email: Email, action: Action, internal_state: Dict[str, Any]) -> 
                 step1_score = safe_score(0.33)
                 step1_reason = "correct escalation for urgent item (verified in internal state)"
             else:
-                step1_score = safe_score(0.0)
+                step1_score = safe_score(0.01)
                 step1_reason = "escalation action but not in internal state"
         elif action.action_type == "resolve":
-            step1_score = safe_score(0.0)
+            step1_score = safe_score(0.01)
             step1_reason = "failed to escalate urgent item"
         else:
             step1_score = safe_score(0.1)
@@ -97,10 +97,10 @@ def grade_hard(email: Email, action: Action, internal_state: Dict[str, Any]) -> 
                 step1_score = safe_score(0.33)
                 step1_reason = "correct resolution for non-urgent item (verified in internal state)"
             else:
-                step1_score = safe_score(0.0)
+                step1_score = safe_score(0.01)
                 step1_reason = "resolution action but not in internal state"
         elif action.action_type == "escalate":
-            step1_score = safe_score(0.0)
+            step1_score = safe_score(0.01)
             step1_reason = "unnecessary escalation of non-urgent item"
         else:
             step1_score = safe_score(0.1)
@@ -108,7 +108,7 @@ def grade_hard(email: Email, action: Action, internal_state: Dict[str, Any]) -> 
     
     # Step 2: Check content quality and specificity (0.33 points)
     content = action.content.lower()
-    step2_score = safe_score(0.0)
+    step2_score = safe_score(0.01)
     step2_reason = "poor content quality"
     
     if action.action_type == "escalate" and email.requires_escalation:
@@ -147,7 +147,7 @@ def grade_hard(email: Email, action: Action, internal_state: Dict[str, Any]) -> 
             step2_reason = "adequate resolution content"
     
     # Step 3: Check workflow efficiency and decision quality (0.34 points)
-    step3_score = safe_score(0.0)
+    step3_score = safe_score(0.01)
     step3_reason = "inefficient workflow"
     
     # Bonus for quick, appropriate decisions - verify with internal state
