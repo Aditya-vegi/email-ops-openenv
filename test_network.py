@@ -4,6 +4,18 @@ from typing import List, Dict, Any
 import requests
 import json
 
+def safe_score(score):
+    try:
+        score = float(score)
+    except:
+        return 0.5
+    
+    if score <= 0:
+        return 0.01
+    elif score >= 1:
+        return 0.99
+    return score
+
 # Test network connectivity to environment
 print("Testing network connectivity...")
 
@@ -189,13 +201,13 @@ async def main():
                     break
             
             # Calculate scores
-            final_score = sum(rewards) / max(1, len(rewards))
-            total_reward = sum(rewards)
+            final_score = safe_score(sum(rewards) / max(1, len(rewards)))
+            total_reward = safe_score(sum(rewards))
             
         except Exception as e:
             print(f"Error in task {task_id}: {e}")
-            final_score = 0.0
-            total_reward = 0.0
+            final_score = safe_score(0.01)
+            total_reward = safe_score(0.0)
         
         finally:
             log_end(task_id, final_score, total_reward)
