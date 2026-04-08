@@ -156,7 +156,7 @@ async def main():
         except Exception as e:
             print(f"Error in task {task_id}: {e}")
             final_score = safe_score(0.01)
-            total_reward = safe_score(0.0)
+            total_reward = safe_score(0.01)
         
         finally:
             log_end(task_id, final_score, total_reward)

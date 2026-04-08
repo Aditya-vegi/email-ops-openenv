@@ -64,7 +64,7 @@ def grade_task_3(final_state: Dict[str, Any]) -> float:
     email_3_resolved = 3 in resolved_emails
     
     # Score based on proper workflow execution
-    score = safe_score(0.0)
+    score = safe_score(0.01)
     if email_1_escalated:
         score = safe_score(score + 0.4)  # Correct escalation of urgent email
     if email_2_resolved:

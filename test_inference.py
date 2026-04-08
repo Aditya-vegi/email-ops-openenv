@@ -227,7 +227,7 @@ async def main():
         except Exception as e:
             print(f"❌ Error in task {task_id}: {e}")
             final_score = safe_score(0.01)
-            total_reward = safe_score(0.0)
+            total_reward = safe_score(0.01)
             success = False
             # Only log errors if absolutely necessary - validator doesn't like extra logs
             pass
