@@ -4,17 +4,13 @@ from typing import List, Dict, Any
 import requests
 import json
 
-# CRITICAL: Initialize OpenAI using ONLY the specified pattern
-# This is EXACTLY what the validator requires
-API_KEY = os.environ["API_KEY"]
-API_BASE_URL = os.environ["API_BASE_URL"]
-
-# MANDATORY: Initialize OpenAI client with http_client=None to avoid proxies error
+# EXACT OpenAI client initialization as required
+import os
 from openai import OpenAI
+
 client = OpenAI(
-    api_key=API_KEY,
-    base_url=API_BASE_URL,
-    http_client=None
+    api_key=os.environ["API_KEY"],
+    base_url=os.environ["API_BASE_URL"]
 )
 
 API_BASE = os.getenv("SPACE_URL", "https://ADITYA-VEGI-email-ops-openenv.hf.space")
@@ -58,8 +54,9 @@ Return ONLY a JSON object with this exact format:
     "suggested_reply": "context-aware reply"
 }}"""
     
+    # Wrap ONLY API CALLS in try/except (NOT client initialization)
     try:
-        # CRITICAL: This API call MUST execute - NO FALLBACK ALLOWED
+        # CRITICAL: This API call MUST execute
         response = client.chat.completions.create(
             model=MODEL,
             messages=[
