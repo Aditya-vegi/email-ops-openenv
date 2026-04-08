@@ -241,7 +241,7 @@ class EmailEnv:
             # Validate action structure
             if not hasattr(action, 'action_type') or not hasattr(action, 'content'):
                 error_msg = f"Invalid action format: {action}"
-                reward = safe_score(-0.5)
+                reward = safe_score(0.01)  # Minimum positive reward for errors
                 return StepResult(self._obs("invalid_action"), reward, False, {
                     "reason": error_msg, 
                     "available_actions": ["classify", "reply", "escalate", "resolve", "next"],
