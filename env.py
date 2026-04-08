@@ -3,6 +3,18 @@ import copy
 from models import Email, Observation, Action, StepResult, EmailObservation, EmailAction
 from graders import grade_easy, grade_medium, grade_hard
 
+def safe_score(score):
+    try:
+        score = float(score)
+    except:
+        return 0.5
+    
+    if score <= 0:
+        return 0.01
+    elif score >= 1:
+        return 0.99
+    return score
+
 
 class StepResult:
     """Wrapper class for OpenEnv step results"""
@@ -219,14 +231,16 @@ class EmailEnv:
     def step(self, action: Action) -> StepResult:
         """Step function with graceful error recovery and strict "Done" logic"""
         if self.done:
-            return StepResult(self._obs("noop"), 0.0, True, {"reason": "episode done"})
+            reward = safe_score(0.0)
+            return StepResult(self._obs("noop"), reward, True, {"reason": "episode done"})
 
         # Graceful error recovery for invalid actions
         try:
             # Validate action structure
             if not hasattr(action, 'action_type') or not hasattr(action, 'content'):
                 error_msg = f"Invalid action format: {action}"
-                return StepResult(self._obs("invalid_action"), -0.5, False, {
+                reward = safe_score(-0.5)
+                return StepResult(self._obs("invalid_action"), reward, False, {
                     "reason": error_msg, 
                     "available_actions": ["classify", "reply", "escalate", "resolve", "next"],
                     "error_recovery": True
@@ -236,7 +250,8 @@ class EmailEnv:
             valid_actions = ["classify", "reply", "escalate", "resolve", "next"]
             if action.action_type not in valid_actions:
                 error_msg = f"'{action.action_type}' is not a valid action. Available actions are {valid_actions}"
-                return StepResult(self._obs("invalid_action"), -0.5, False, {
+                reward = safe_score(-0.5)
+                return StepResult(self._obs("invalid_action"), reward, False, {
                     "reason": error_msg,
                     "available_actions": valid_actions,
                     "error_recovery": True,
@@ -246,7 +261,8 @@ class EmailEnv:
             # Validate content
             if action.content and not isinstance(action.content, str):
                 error_msg = f"Action content must be a string, got {type(action.content).__name__}"
-                return StepResult(self._obs("invalid_action"), -0.3, False, {
+                reward = safe_score(-0.3)
+                return StepResult(self._obs("invalid_action"), reward, False, {
                     "reason": error_msg,
                     "error_recovery": True,
                     "help": "Ensure content is a string"
@@ -255,7 +271,8 @@ class EmailEnv:
         except Exception as e:
             # Catch any unexpected errors and return helpful observation
             error_msg = f"Error processing action: {str(e)}"
-            return StepResult(self._obs("error"), -1.0, False, {
+            reward = safe_score(-1.0)
+            return StepResult(self._obs("error"), reward, False, {
                 "reason": error_msg,
                 "error_recovery": True,
                 "original_action": str(action) if action else "None"
@@ -268,7 +285,8 @@ class EmailEnv:
         # CRITICAL: Check max_steps to prevent hanging
         if self.current_step >= self.max_steps:
             self.done = True
-            return StepResult(self._obs("max_steps_reached"), -1.0, True, {"reason": "max_steps_reached", "current_step": self.current_step})
+            reward = safe_score(-1.0)
+            return StepResult(self._obs("max_steps_reached"), reward, True, {"reason": "max_steps_reached", "current_step": self.current_step})
         
         score, reason = self._grade(action)
 
@@ -388,8 +406,8 @@ class EmailEnv:
         # --- FINAL REWARD UPDATE (FIXED BUG) ---
         self.total_reward += reward
 
-        # Clamp reward to reasonable range
-        reward = max(-1.0, min(1.0, reward))
+        # Apply safe_score to final reward
+        reward = safe_score(reward)
 
         info = {"reason": reason, "steps": self.steps, "current_step": self.current_step, "total_reward": self.total_reward, "internal_state": self.internal_state}
         
