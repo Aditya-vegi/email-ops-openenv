@@ -1,6 +1,18 @@
 from typing import Dict, Any
 from models import Email, Action
 
+def safe_score(score):
+    try:
+        score = float(score)
+    except:
+        return 0.5
+    
+    if score <= 0:
+        return 0.01
+    elif score >= 1:
+        return 0.99
+    return score
+
 def grade_task_1(final_state: Dict[str, Any]) -> float:
     """Task 1: Easy Classification - Deterministic boolean grading
     
@@ -13,9 +25,9 @@ def grade_task_1(final_state: Dict[str, Any]) -> float:
     
     # Must classify at least one email correctly
     if len(classified_emails) > 0:
-        return 1.0
+        return safe_score(1.0)
     else:
-        return 0.0
+        return safe_score(0.0)
 
 def grade_task_2(final_state: Dict[str, Any]) -> float:
     """Task 2: Medium Reply - Deterministic boolean grading
@@ -29,9 +41,9 @@ def grade_task_2(final_state: Dict[str, Any]) -> float:
     
     # Must reply to at least one email
     if len(replied_emails) > 0:
-        return 1.0
+        return safe_score(1.0)
     else:
-        return 0.0
+        return safe_score(0.0)
 
 def grade_task_3(final_state: Dict[str, Any]) -> float:
     """Task 3: Hard Workflow - Deterministic boolean grading
@@ -60,7 +72,7 @@ def grade_task_3(final_state: Dict[str, Any]) -> float:
     if email_3_resolved:
         score += 0.3  # Correct resolution of bug email
     
-    return score
+    return safe_score(score)
 
 def grade_task(task_id: str, final_state: Dict[str, Any]) -> float:
     """Main grading function - purely programmatic, no LLM"""
@@ -72,4 +84,4 @@ def grade_task(task_id: str, final_state: Dict[str, Any]) -> float:
     elif task_id == "hard" or task_id == "3":
         return grade_task_3(final_state)
     else:
-        return 0.0  # Unknown task
+        return safe_score(0.0)  # Unknown task

@@ -208,15 +208,17 @@ class EmailEnv:
             Tuple[float, str]: Score and reason for the score.
         """
         if not self.current:
-            return 0.0, "no email"
+            return safe_score(0.0), "no email"
 
         # Pass internal state to graders for deterministic checking
         if self.task == "easy":
-            return grade_easy(self.current, action, self.internal_state)
+            score, reason = grade_easy(self.current, action, self.internal_state)
         elif self.task == "medium":
-            return grade_medium(self.current, action, self.internal_state)
+            score, reason = grade_medium(self.current, action, self.internal_state)
         else:
-            return grade_hard(self.current, action, self.internal_state)
+            score, reason = grade_hard(self.current, action, self.internal_state)
+        
+        return safe_score(score), reason
 
     def _advance(self):
         """
