@@ -195,13 +195,13 @@ async def main():
             if len(rewards) == 0:
                 final_score = safe_score(0.5)
             else:
-                final_score = float(sum(rewards) / len(rewards))
+                final_score = safe_score(sum(rewards) / len(rewards))
                 if final_score <= 0:
                     final_score = 0.01
                 elif final_score >= 1:
                     final_score = 0.99
             
-            total_reward = float(sum(rewards))
+            total_reward = safe_score(sum(rewards))
             if total_reward <= 0:
                 total_reward = 0.01
             elif total_reward >= 1:
