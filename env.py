@@ -208,7 +208,7 @@ class EmailEnv:
             Tuple[float, str]: Score and reason for the score.
         """
         if not self.current:
-            return safe_score(0.0), "no email"
+            return safe_score(0.01), "no email"
 
         # Pass internal state to graders for deterministic checking
         if self.task == "easy":
@@ -233,7 +233,7 @@ class EmailEnv:
     def step(self, action: Action) -> StepResult:
         """Step function with graceful error recovery and strict "Done" logic"""
         if self.done:
-            reward = safe_score(0.0)
+            reward = safe_score(0.01)
             return StepResult(self._obs("noop"), reward, True, {"reason": "episode done"})
 
         # Graceful error recovery for invalid actions
