@@ -176,14 +176,14 @@ async def main():
                 except:
                     pass  # Ignore errors for forced end
             
-            # Calculate scores
-            final_score = sum(rewards) / max(1, len(rewards))
+            # Calculate scores with strict range (0, 1)
+            final_score = max(0.01, min(sum(rewards) / max(1, len(rewards)), 0.99))
             total_reward = sum(rewards)
             success = final_score >= 0.5
             
         except Exception as e:
             print(f"Error in task {task_id}: {e}")
-            final_score = 0.0
+            final_score = 0.01  # Ensure strict range (0, 1)
             total_reward = 0.0
             success = False
             # Only log errors if absolutely necessary - validator doesn't like extra logs
