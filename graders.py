@@ -7,10 +7,14 @@ def safe_score(score):
     except:
         return 0.5
     
-    if score <= 0:
-        return 0.01
+    if score <= 0.01:
+        return 0.02
+    elif score >= 0.99:
+        return 0.98
+    elif score <= 0:
+        return 0.02
     elif score >= 1:
-        return 0.99
+        return 0.98
     return score
 
 def grade_easy(email: Email, action: Action, internal_state: Dict[str, Any]) -> Tuple[float, str]:
