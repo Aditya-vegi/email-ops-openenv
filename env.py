@@ -408,8 +408,12 @@ class EmailEnv:
         # --- FINAL REWARD UPDATE (FIXED BUG) ---
         self.total_reward += reward
 
-        # Apply safe_score to final reward
-        reward = safe_score(reward)
+        # CRITICAL: Manual score clamping (not just safe_score)
+        reward = float(reward)
+        if reward <= 0:
+            reward = 0.01
+        elif reward >= 1:
+            reward = 0.99
 
         info = {"reason": reason, "steps": self.steps, "current_step": self.current_step, "total_reward": self.total_reward, "internal_state": self.internal_state}
         
