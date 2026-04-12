@@ -3,16 +3,23 @@ import copy
 from models import Email, Observation, Action, StepResult, EmailObservation, EmailAction
 from graders import grade_easy, grade_medium, grade_hard
 
+# EPSILON for strict inequality (0 < score < 1)
+EPSILON = 1e-9
+
 def safe_score(score):
+    """
+    Used only for grading logic to keep scores between 0 and 1.
+    It ensures the score is never exactly 0.0 or 1.0.
+    """
     try:
         score = float(score)
     except:
         return 0.5
     
-    if score <= 0:
-        return 0.01
-    elif score >= 1:
-        return 0.99
+    if score <= 0.0:
+        return 0.0 + EPSILON
+    elif score >= 1.0:
+        return 1.0 - EPSILON
     return score
 
 
@@ -241,7 +248,8 @@ class EmailEnv:
             # Validate action structure
             if not hasattr(action, 'action_type') or not hasattr(action, 'content'):
                 error_msg = f"Invalid action format: {action}"
-                reward = safe_score(0.01)  # Minimum positive reward for errors
+                # FIX: Do not use safe_score on penalties, just return raw penalty
+                reward = 0.01  # Small positive score to keep it valid, but minimal
                 return StepResult(self._obs("invalid_action"), reward, False, {
                     "reason": error_msg, 
                     "available_actions": ["classify", "reply", "escalate", "resolve", "next"],
@@ -252,7 +260,8 @@ class EmailEnv:
             valid_actions = ["classify", "reply", "escalate", "resolve", "next"]
             if action.action_type not in valid_actions:
                 error_msg = f"'{action.action_type}' is not a valid action. Available actions are {valid_actions}"
-                reward = safe_score(-0.5)
+                # FIX: Use raw negative reward, do not safe_score it
+                reward = -0.5
                 return StepResult(self._obs("invalid_action"), reward, False, {
                     "reason": error_msg,
                     "available_actions": valid_actions,
@@ -263,7 +272,8 @@ class EmailEnv:
             # Validate content
             if action.content and not isinstance(action.content, str):
                 error_msg = f"Action content must be a string, got {type(action.content).__name__}"
-                reward = safe_score(-0.3)
+                # FIX: Use raw negative reward
+                reward = -0.3
                 return StepResult(self._obs("invalid_action"), reward, False, {
                     "reason": error_msg,
                     "error_recovery": True,
@@ -273,7 +283,8 @@ class EmailEnv:
         except Exception as e:
             # Catch any unexpected errors and return helpful observation
             error_msg = f"Error processing action: {str(e)}"
-            reward = safe_score(-1.0)
+            # FIX: Use raw negative reward
+            reward = -1.0
             return StepResult(self._obs("error"), reward, False, {
                 "reason": error_msg,
                 "error_recovery": True,
@@ -287,7 +298,8 @@ class EmailEnv:
         # CRITICAL: Check max_steps to prevent hanging
         if self.current_step >= self.max_steps:
             self.done = True
-            reward = safe_score(-1.0)
+            # FIX: Use raw negative reward
+            reward = -1.0
             return StepResult(self._obs("max_steps_reached"), reward, True, {"reason": "max_steps_reached", "current_step": self.current_step})
         
         score, reason = self._grade(action)
@@ -409,27 +421,14 @@ class EmailEnv:
         self.total_reward += reward
 
         # --- CORRECTED CLAMPING LOGIC ---
-        # We define a helper here to ensure strict (0, 1) compliance
-        def clamp_reward(r):
-            EPSILON = 1e-9
-            r = float(r)
-            if r <= 0.0:
-                # Fix: Allow negative numbers to stay negative (or tiny positive if strictly required)
-                # But for the step reward, we usually just need to ensure it's not exactly 0 or 1
-                return 0.0 + EPSILON if r == 0.0 else r
-            elif r >= 1.0:
-                return 1.0 - EPSILON
-            return r
-
-        # Clamp the immediate reward to ensure it's strictly between 0 and 1 if it's supposed to be positive
-        # However, since you have penalties, we should only clamp if we are returning a score for grading.
-        # Given the error, let's ensure the returned reward is never exactly 0.0 or 1.0
+        # We clamp the FINAL reward to ensure strict (0, 1) range.
+        # Even if the internal logic results in 0.0 or 1.0, this fixes it.
         
         final_reward = float(reward)
         if final_reward <= 0.0:
-            final_reward = 0.0 + 1e-9
+            final_reward = 0.0 + EPSILON
         elif final_reward >= 1.0:
-            final_reward = 1.0 - 1e-9
+            final_reward = 1.0 - EPSILON
 
         info = {"reason": reason, "steps": self.steps, "current_step": self.current_step, "total_reward": self.total_reward, "internal_state": self.internal_state}
         
