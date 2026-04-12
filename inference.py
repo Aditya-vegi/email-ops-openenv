@@ -34,9 +34,13 @@ def log_step(step: int, action: str, reward: float):
 
 def log_end(task_id: str, final_score: float, total_reward: float):
     """Helper function to ensure exact logging format"""
-    final_score = safe_score(final_score)
-    total_reward = safe_score(total_reward)
-    print(f"[END] Task ID: {task_id} | Final Score: {final_score:.2f} | Total Reward: {total_reward:.2f}")
+    try:
+        final_score = safe_score(final_score)
+        total_reward = safe_score(total_reward)
+        print(f"[END] Task ID: {task_id} | Final Score: {final_score:.2f} | Total Reward: {total_reward:.2f}")
+    except Exception as e:
+        # Fallback formatting if something goes wrong
+        print(f"[END] Task ID: {task_id} | Final Score: 0.01 | Total Reward: 0.01")
 
 def process_email_with_llm(subject: str, body: str) -> Dict[str, Any]:
     """
