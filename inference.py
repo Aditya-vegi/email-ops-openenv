@@ -149,6 +149,8 @@ async def main():
         steps = 0
         success = False
         episode_done = False
+        final_score = safe_score(0.01)
+        total_reward = safe_score(0.01)
         
         try:
             # Reset environment for this task
