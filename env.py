@@ -1,7 +1,7 @@
 from typing import List, Tuple, Optional, Dict, Any
 import copy
 from models import Email, Observation, Action, StepResult, EmailObservation, EmailAction
-from graders import grade_easy, grade_medium, grade_hard
+from graders import grade_easy_v2, grade_medium_v2, grade_hard_v2
 
 # EPSILON for strict inequality (0 < score < 1)
 EPSILON = 1e-9
