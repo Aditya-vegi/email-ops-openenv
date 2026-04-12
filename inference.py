@@ -21,13 +21,7 @@ def safe_score(score):
     try:
         score = float(score)
     except:
-        return 0.5
-    
-    if score <= 0:
-        return 0.01
-    elif score >= 1:
-        return 0.99
-    return score
+        return score
 
 def log_start(task_id: str):
     """Helper function to ensure exact logging format"""
@@ -196,16 +190,8 @@ async def main():
                 final_score = safe_score(0.5)
             else:
                 final_score = safe_score(sum(rewards) / len(rewards))
-                if final_score <= 0:
-                    final_score = 0.01
-                elif final_score >= 1:
-                    final_score = 0.99
             
             total_reward = safe_score(sum(rewards))
-            if total_reward <= 0:
-                total_reward = 0.01
-            elif total_reward >= 1:
-                total_reward = 0.99
             
             print("FINAL:", final_score, total_reward)  # DEBUG
             
