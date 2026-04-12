@@ -64,15 +64,17 @@ def grade_task_3(final_state: Dict[str, Any]) -> float:
     email_3_resolved = 3 in resolved_emails
     
     # Score based on proper workflow execution
-    score = safe_score(0.01)
+    # FIX: Calculate base score WITHOUT safe_score wrapping to prevent intermediate limits
+    base_score = 0.01
     if email_1_escalated:
-        score = safe_score(score + 0.4)  # Correct escalation of urgent email
+        base_score += 0.4  # Correct escalation of urgent email
     if email_2_resolved:
-        score = safe_score(score + 0.3)  # Correct resolution of invoice email
+        base_score += 0.3  # Correct resolution of invoice email
     if email_3_resolved:
-        score = safe_score(score + 0.3)  # Correct resolution of bug email
+        base_score += 0.3  # Correct resolution of bug email
     
-    return safe_score(score)
+    # FIX: Apply safe_score ONLY at the very end to cap the final sum at 0.99
+    return safe_score(base_score)
 
 def grade_task(task_id: str, final_state: Dict[str, Any]) -> float:
     """Main grading function - purely programmatic, no LLM"""
