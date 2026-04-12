@@ -18,10 +18,18 @@ MODEL = os.getenv("MODEL_NAME", "gpt-4o-mini")
 MAX_STEPS = 15
 
 def safe_score(score):
+    """Ensures the score is strictly between 0 and 1."""
+    EPSILON = 1e-9
     try:
         score = float(score)
     except:
-        return score
+        return 0.5
+    
+    if score <= 0.0:
+        return 0.0 + EPSILON
+    elif score >= 1.0:
+        return 1.0 - EPSILON
+    return score
 
 def log_start(task_id: str):
     """Helper function to ensure exact logging format"""
