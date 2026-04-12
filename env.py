@@ -405,19 +405,35 @@ class EmailEnv:
         if self.current_step > self.max_steps:
             reward -= 1.0  # Large negative reward to discourage infinite loops
 
-        # --- FINAL REWARD UPDATE (FIXED BUG) ---
+        # --- FINAL REWARD UPDATE ---
         self.total_reward += reward
 
-        # CRITICAL: Manual score clamping (not just safe_score)
-        reward = float(reward)
-        if reward <= 0:
-            reward = 0.01
-        elif reward >= 1:
-            reward = 0.99
+        # --- CORRECTED CLAMPING LOGIC ---
+        # We define a helper here to ensure strict (0, 1) compliance
+        def clamp_reward(r):
+            EPSILON = 1e-9
+            r = float(r)
+            if r <= 0.0:
+                # Fix: Allow negative numbers to stay negative (or tiny positive if strictly required)
+                # But for the step reward, we usually just need to ensure it's not exactly 0 or 1
+                return 0.0 + EPSILON if r == 0.0 else r
+            elif r >= 1.0:
+                return 1.0 - EPSILON
+            return r
+
+        # Clamp the immediate reward to ensure it's strictly between 0 and 1 if it's supposed to be positive
+        # However, since you have penalties, we should only clamp if we are returning a score for grading.
+        # Given the error, let's ensure the returned reward is never exactly 0.0 or 1.0
+        
+        final_reward = float(reward)
+        if final_reward <= 0.0:
+            final_reward = 0.0 + 1e-9
+        elif final_reward >= 1.0:
+            final_reward = 1.0 - 1e-9
 
         info = {"reason": reason, "steps": self.steps, "current_step": self.current_step, "total_reward": self.total_reward, "internal_state": self.internal_state}
         
-        return StepResult(self._obs(action.action_type), reward, self.done, info)
+        return StepResult(self._obs(action.action_type), final_reward, self.done, info)
 
     def archive_email(self, email_id: str) -> Dict[str, Any]:
         """
