@@ -10,6 +10,20 @@ from typing import Dict, List, Optional
 import requests
 from baseline_agent import BaselineAgent
 
+# Helper to ensure strict inequality (0 < score < 1)
+def clamp_final_score(score):
+    EPSILON = 1e-9
+    try:
+        score = float(score)
+    except:
+        return 0.5
+    
+    if score <= 0.0:
+        return 0.0 + EPSILON
+    elif score >= 1.0:
+        return 1.0 - EPSILON
+    return score
+
 class LLMAgent:
     """Base class for LLM-based agents"""
     
@@ -150,10 +164,10 @@ class AgenticEvaluator:
             task_stats = {
                 "task": task,
                 "episodes": task_results,
-                "mean_reward": sum(rewards) / len(rewards),
+                "mean_reward": clamp_final_score(sum(rewards) / len(rewards)),
                 "max_reward": max(rewards),
                 "min_reward": min(rewards),
-                "success_rate": sum(1 for r in task_results if r["success"]) / len(task_results),
+                "success_rate": clamp_final_score(sum(1 for r in task_results if r["success"]) / len(task_results)),
                 "std_dev": self._std_dev(rewards)
             }
             all_results.append(task_stats)
@@ -166,8 +180,8 @@ class AgenticEvaluator:
         return {
             "agent_name": agent.name,
             "task_results": all_results,
-            "overall_mean_reward": sum(all_rewards) / len(all_rewards),
-            "overall_success_rate": sum(1 for r in all_rewards if r > 0.5) / len(all_rewards),
+            "overall_mean_reward": clamp_final_score(sum(all_rewards) / len(all_rewards)),
+            "overall_success_rate": clamp_final_score(sum(1 for r in all_rewards if r > 0.5) / len(all_rewards)),
             "overall_std_dev": self._std_dev(all_rewards),
             "total_episodes": len(all_rewards)
         }
