@@ -9,6 +9,20 @@ import sys
 import time
 from pathlib import Path
 
+# Helper to ensure final scores are strictly between 0 and 1
+def clamp_final_score(score):
+    EPSILON = 1e-9
+    try:
+        score = float(score)
+    except:
+        return 0.5
+    
+    if score <= 0.0:
+        return 0.0 + EPSILON
+    elif score >= 1.0:
+        return 1.0 - EPSILON
+    return score
+
 class FinalEvaluator:
     def __init__(self):
         self.results = {
