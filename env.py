@@ -219,11 +219,11 @@ class EmailEnv:
 
         # Pass internal state to graders for deterministic checking
         if self.task == "easy":
-            score, reason = grade_easy(self.current, action, self.internal_state)
+            score, reason = grade_easy_v2(self.current, action, self.internal_state)
         elif self.task == "medium":
-            score, reason = grade_medium(self.current, action, self.internal_state)
+            score, reason = grade_medium_v2(self.current, action, self.internal_state)
         else:
-            score, reason = grade_hard(self.current, action, self.internal_state)
+            score, reason = grade_hard_v2(self.current, action, self.internal_state)
         
         return safe_score(score), reason
 

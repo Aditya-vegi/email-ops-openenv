@@ -18,7 +18,8 @@ def safe_score(score):
         return 1.0 - EPSILON  # Returns 0.999999999
     return score
 
-def grade_easy(email: Email, action: Action, internal_state: Dict[str, Any]) -> Tuple[float, str]:
+# Renamed functions to force cache refresh in the evaluation system
+def grade_easy_v2(email: Email, action: Action, internal_state: Dict[str, Any]) -> Tuple[float, str]:
     """Easy task: Classify email priority correctly"""
     if action.action_type != "classify":
         return safe_score(0.01), "wrong action type"
@@ -37,7 +38,7 @@ def grade_easy(email: Email, action: Action, internal_state: Dict[str, Any]) -> 
     else:
         return safe_score(0.01), f"wrong priority: {actual} vs {expected}"
 
-def grade_medium(email: Email, action: Action, internal_state: Dict[str, Any]) -> Tuple[float, str]:
+def grade_medium_v2(email: Email, action: Action, internal_state: Dict[str, Any]) -> Tuple[float, str]:
     """Medium task: Generate appropriate reply"""
     if action.action_type != "reply":
         return safe_score(0.01), "wrong action type"
@@ -60,7 +61,7 @@ def grade_medium(email: Email, action: Action, internal_state: Dict[str, Any]) -
     else:
         return safe_score(0.01), "inappropriate or insufficient response"
 
-def grade_hard(email: Email, action: Action, internal_state: Dict[str, Any]) -> Tuple[float, str]:
+def grade_hard_v2(email: Email, action: Action, internal_state: Dict[str, Any]) -> Tuple[float, str]:
     """Hard task: Multi-step workflow with dependency checking"""
     
     email_id = email.email_id
@@ -72,7 +73,6 @@ def grade_hard(email: Email, action: Action, internal_state: Dict[str, Any]) -> 
     step3_reason = "N/A"
     
     # --- Step 1: Correct Action Type (Max 0.33) ---
-    # Using raw floats, no safe_score wrapping
     if email.requires_escalation:
         if action.action_type == "escalate":
             if email_id in internal_state.get("escalated_emails", []):
@@ -139,7 +139,7 @@ def grade_hard(email: Email, action: Action, internal_state: Dict[str, Any]) -> 
             step2_reason = "adequate resolution content"
     
     # --- Step 3: Workflow Efficiency (Max 0.33) ---
-    # Changed from 0.34 to 0.33 to ensure max sum is 0.99
+    # Max sum is 0.99 (0.33 + 0.33 + 0.33)
     if action.action_type in ["escalate", "resolve"]:
         if email.requires_escalation and action.action_type == "escalate":
             if email_id in internal_state.get("escalated_emails", []):
@@ -151,7 +151,7 @@ def grade_hard(email: Email, action: Action, internal_state: Dict[str, Any]) -> 
                 step3_reason = "efficient routine item handling"
     
     # --- Final Calculation ---
-    # Sum is now at most 0.99 (0.33 + 0.33 + 0.33)
+    # Sum is at most 0.99
     total_score = step1_score + step2_score + step3_score
     
     # Apply safe_score ONLY once at the end
