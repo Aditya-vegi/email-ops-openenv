@@ -17,19 +17,26 @@ API_BASE = os.getenv("SPACE_URL", "https://ADITYA-VEGI-email-ops-openenv.hf.spac
 MODEL = os.getenv("MODEL_NAME", "gpt-4o-mini")
 MAX_STEPS = 15
 
-def safe_score(score):
-    """Ensures the score is strictly between 0 and 1."""
-    EPSILON = 1e-9
+# UNIVERSAL CLAMP - Use this everywhere
+UNIVERSAL_EPSILON = 1e-9
+
+def clamp_score(value):
+    """
+    Forces any number to be strictly between 0 and 1.
+    If input is 1.0, output is 0.999999999.
+    If input is 0.0, output is 0.000000001.
+    """
     try:
-        score = float(score)
+        val = float(value)
     except:
         return 0.5
     
-    if score <= 0.0:
-        return 0.0 + EPSILON
-    elif score >= 1.0:
-        return 1.0 - EPSILON
-    return score
+    # Aggressive clamping to prevent ANY edge case
+    if val <= 0.0:
+        return 0.0 + UNIVERSAL_EPSILON
+    if val >= 1.0:
+        return 1.0 - UNIVERSAL_EPSILON
+    return val
 
 def log_start(task_id: str):
     """Helper function to ensure exact logging format"""
@@ -37,14 +44,14 @@ def log_start(task_id: str):
 
 def log_step(step: int, action: str, reward: float):
     """Helper function to ensure exact logging format"""
-    reward = safe_score(reward)
+    reward = clamp_score(reward)
     print(f"[STEP] Step: {step} | Action: {action} | Reward: {reward:.2f}")
 
 def log_end(task_id: str, final_score: float, total_reward: float):
     """Helper function to ensure exact logging format"""
     try:
-        final_score = safe_score(final_score)
-        total_reward = safe_score(total_reward)
+        final_score = clamp_score(final_score)
+        total_reward = clamp_score(total_reward)
         print(f"[END] Task ID: {task_id} | Final Score: {final_score:.2f} | Total Reward: {total_reward:.2f}")
     except Exception as e:
         # Fallback formatting if something goes wrong
@@ -161,8 +168,8 @@ async def main():
         steps = 0
         success = False
         episode_done = False
-        final_score = safe_score(0.01)
-        total_reward = safe_score(0.01)
+        final_score = clamp_score(0.01)
+        total_reward = clamp_score(0.01)
         
         try:
             # Reset environment for this task
@@ -177,7 +184,7 @@ async def main():
                 print(f"Step {step}: {action}")
                 
                 resp = requests.post(f"{API_BASE}/step", json=a, timeout=30).json()
-                reward = safe_score(float(resp.get("reward") or 0.0))
+                reward = clamp_score(float(resp.get("reward") or 0.0))
                 done = bool(resp.get("done"))
                 
                 rewards.append(reward)
@@ -201,11 +208,11 @@ async def main():
             
             # Calculate scores with strict range (0, 1)
             if len(rewards) == 0:
-                final_score = safe_score(0.5)
+                final_score = clamp_score(0.5)
             else:
-                final_score = safe_score(sum(rewards) / len(rewards))
+                final_score = clamp_score(sum(rewards) / len(rewards))
             
-            total_reward = safe_score(sum(rewards))
+            total_reward = clamp_score(sum(rewards))
             
             print("FINAL:", final_score, total_reward)  # DEBUG
             
@@ -213,8 +220,8 @@ async def main():
             
         except Exception as e:
             print(f"Error in task {task_id}: {e}")
-            final_score = safe_score(0.01)
-            total_reward = safe_score(0.01)
+            final_score = clamp_score(0.01)
+            total_reward = clamp_score(0.01)
             success = False
             # Only log errors if absolutely necessary - validator doesn't like extra logs
             pass

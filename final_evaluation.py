@@ -9,19 +9,26 @@ import sys
 import time
 from pathlib import Path
 
-# Helper to ensure final scores are strictly between 0 and 1
-def clamp_final_score(score):
-    EPSILON = 1e-9
+# UNIVERSAL CLAMP - Use this everywhere
+UNIVERSAL_EPSILON = 1e-9
+
+def clamp_score(value):
+    """
+    Forces any number to be strictly between 0 and 1.
+    If input is 1.0, output is 0.999999999.
+    If input is 0.0, output is 0.000000001.
+    """
     try:
-        score = float(score)
+        val = float(value)
     except:
         return 0.5
     
-    if score <= 0.0:
-        return 0.0 + EPSILON
-    elif score >= 1.0:
-        return 1.0 - EPSILON
-    return score
+    # Aggressive clamping to prevent ANY edge case
+    if val <= 0.0:
+        return 0.0 + UNIVERSAL_EPSILON
+    if val >= 1.0:
+        return 1.0 - UNIVERSAL_EPSILON
+    return val
 
 class FinalEvaluator:
     def __init__(self):

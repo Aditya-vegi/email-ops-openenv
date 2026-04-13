@@ -9,19 +9,26 @@ import json
 from typing import Dict, List, Optional
 import time
 
-# Helper to ensure strict inequality (0 < score < 1)
-def clamp_final_score(score):
-    EPSILON = 1e-9
+# UNIVERSAL CLAMP - Use this everywhere
+UNIVERSAL_EPSILON = 1e-9
+
+def clamp_score(value):
+    """
+    Forces any number to be strictly between 0 and 1.
+    If input is 1.0, output is 0.999999999.
+    If input is 0.0, output is 0.000000001.
+    """
     try:
-        score = float(score)
+        val = float(value)
     except:
         return 0.5
     
-    if score <= 0.0:
-        return 0.0 + EPSILON
-    elif score >= 1.0:
-        return 1.0 - EPSILON
-    return score
+    # Aggressive clamping to prevent ANY edge case
+    if val <= 0.0:
+        return 0.0 + UNIVERSAL_EPSILON
+    if val >= 1.0:
+        return 1.0 - UNIVERSAL_EPSILON
+    return val
 
 class LLMAgent:
     """Base class for LLM-based agents"""
@@ -165,10 +172,10 @@ class BaselineAgent(LLMAgent):
             
             results[task] = {
                 "episodes": task_results,
-                "mean_reward": clamp_final_score(sum(rewards) / len(rewards)),
+                "mean_reward": clamp_score(sum(rewards) / len(rewards)),
                 "max_reward": max(rewards),
                 "min_reward": min(rewards),
-                "success_rate": clamp_final_score(success_rate),
+                "success_rate": clamp_score(success_rate),
                 "mean_steps": sum(r["steps"] for r in task_results) / len(task_results)
             }
             
@@ -183,8 +190,8 @@ class BaselineAgent(LLMAgent):
             all_rewards.extend([r["total_reward"] for r in task_data["episodes"]])
         
         overall_stats = {
-            "overall_mean_reward": clamp_final_score(sum(all_rewards) / len(all_rewards)),
-            "overall_success_rate": clamp_final_score(sum(1 for r in all_rewards if r > 0.5) / len(all_rewards)),
+            "overall_mean_reward": clamp_score(sum(all_rewards) / len(all_rewards)),
+            "overall_success_rate": clamp_score(sum(1 for r in all_rewards if r > 0.5) / len(all_rewards)),
             "task_results": results
         }
         

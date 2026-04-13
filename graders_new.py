@@ -1,21 +1,26 @@
 from typing import Dict, Any
 from models import Email, Action
 
-# EPSILON for strict inequality (0 < score < 1)
-EPSILON = 1e-9 
+# UNIVERSAL CLAMP - Use this everywhere
+UNIVERSAL_EPSILON = 1e-9 
 
-def safe_score(score):
-    """Ensures the score is strictly between 0 and 1."""
+def clamp_score(value):
+    """
+    Forces any number to be strictly between 0 and 1.
+    If input is 1.0, output is 0.999999999.
+    If input is 0.0, output is 0.000000001.
+    """
     try:
-        score = float(score)
+        val = float(value)
     except:
         return 0.5
     
-    if score <= 0.0:
-        return 0.0 + EPSILON
-    elif score >= 1.0:
-        return 1.0 - EPSILON
-    return score
+    # Aggressive clamping to prevent ANY edge case
+    if val <= 0.0:
+        return 0.0 + UNIVERSAL_EPSILON
+    if val >= 1.0:
+        return 1.0 - UNIVERSAL_EPSILON
+    return val
 
 def grade_task_1(final_state: Dict[str, Any]) -> float:
     """Task 1: Easy Classification"""
@@ -23,9 +28,9 @@ def grade_task_1(final_state: Dict[str, Any]) -> float:
     classified_emails = internal_state.get("classified_emails", [])
     
     if len(classified_emails) > 0:
-        return safe_score(0.99)
+        return clamp_score(0.99)
     else:
-        return safe_score(0.01)
+        return clamp_score(0.01)
 
 def grade_task_2(final_state: Dict[str, Any]) -> float:
     """Task 2: Medium Reply"""
@@ -33,9 +38,9 @@ def grade_task_2(final_state: Dict[str, Any]) -> float:
     replied_emails = internal_state.get("replied_emails", [])
     
     if len(replied_emails) > 0:
-        return safe_score(0.99)
+        return clamp_score(0.99)
     else:
-        return safe_score(0.01)
+        return clamp_score(0.01)
 
 def grade_task_3(final_state: Dict[str, Any]) -> float:
     """Task 3: Hard Workflow"""
@@ -58,8 +63,8 @@ def grade_task_3(final_state: Dict[str, Any]) -> float:
         base_score += 0.3
     
     # FIX: If the agent gets everything perfect, base_score is 1.0.
-    # We MUST apply safe_score here to clamp it to 0.999999999
-    return safe_score(base_score)
+    # We MUST apply clamp_score here to clamp it to 0.999999999
+    return clamp_score(base_score)
 
 def grade_task(task_id: str, final_state: Dict[str, Any]) -> float:
     """Main grading function"""
@@ -70,4 +75,4 @@ def grade_task(task_id: str, final_state: Dict[str, Any]) -> float:
     elif task_id == "hard" or task_id == "3":
         return grade_task_3(final_state)
     else:
-        return safe_score(0.01)
+        return clamp_score(0.01)

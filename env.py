@@ -3,24 +3,26 @@ import copy
 from models import Email, Observation, Action, StepResult, EmailObservation, EmailAction
 from graders import grade_easy_v2, grade_medium_v2, grade_hard_v2
 
-# EPSILON for strict inequality (0 < score < 1)
-EPSILON = 1e-9
+# UNIVERSAL CLAMP - Use this everywhere
+UNIVERSAL_EPSILON = 1e-9
 
-def safe_score(score):
+def clamp_score(value):
     """
-    Used only for grading logic to keep scores between 0 and 1.
-    It ensures the score is never exactly 0.0 or 1.0.
+    Forces any number to be strictly between 0 and 1.
+    If input is 1.0, output is 0.999999999.
+    If input is 0.0, output is 0.000000001.
     """
     try:
-        score = float(score)
+        val = float(value)
     except:
         return 0.5
     
-    if score <= 0.0:
-        return 0.0 + EPSILON
-    elif score >= 1.0:
-        return 1.0 - EPSILON
-    return score
+    # Aggressive clamping to prevent ANY edge case
+    if val <= 0.0:
+        return 0.0 + UNIVERSAL_EPSILON
+    if val >= 1.0:
+        return 1.0 - UNIVERSAL_EPSILON
+    return val
 
 
 class StepResult:
@@ -215,7 +217,7 @@ class EmailEnv:
             Tuple[float, str]: Score and reason for the score.
         """
         if not self.current:
-            return safe_score(0.01), "no email"
+            return clamp_score(0.01), "no email"
 
         # Pass internal state to graders for deterministic checking
         if self.task == "easy":
@@ -225,7 +227,7 @@ class EmailEnv:
         else:
             score, reason = grade_hard_v2(self.current, action, self.internal_state)
         
-        return safe_score(score), reason
+        return clamp_score(score), reason
 
     def _advance(self):
         """
@@ -240,7 +242,7 @@ class EmailEnv:
     def step(self, action: Action) -> StepResult:
         """Step function with graceful error recovery and strict "Done" logic"""
         if self.done:
-            reward = safe_score(0.01)
+            reward = clamp_score(0.01)
             return StepResult(self._obs("noop"), reward, True, {"reason": "episode done"})
 
         # Graceful error recovery for invalid actions
@@ -248,7 +250,7 @@ class EmailEnv:
             # Validate action structure
             if not hasattr(action, 'action_type') or not hasattr(action, 'content'):
                 error_msg = f"Invalid action format: {action}"
-                # FIX: Do not use safe_score on penalties, just return raw penalty
+                # FIX: Do not use clamp_score on penalties, just return raw penalty
                 reward = 0.01  # Small positive score to keep it valid, but minimal
                 return StepResult(self._obs("invalid_action"), reward, False, {
                     "reason": error_msg, 
@@ -260,7 +262,7 @@ class EmailEnv:
             valid_actions = ["classify", "reply", "escalate", "resolve", "next"]
             if action.action_type not in valid_actions:
                 error_msg = f"'{action.action_type}' is not a valid action. Available actions are {valid_actions}"
-                # FIX: Use raw negative reward, do not safe_score it
+                # FIX: Use raw negative reward, do not clamp_score it
                 reward = -0.5
                 return StepResult(self._obs("invalid_action"), reward, False, {
                     "reason": error_msg,
@@ -420,15 +422,9 @@ class EmailEnv:
         # --- FINAL REWARD UPDATE ---
         self.total_reward += reward
 
-        # --- CORRECTED CLAMPING LOGIC ---
-        # We clamp the FINAL reward to ensure strict (0, 1) range.
-        # Even if the internal logic results in 0.0 or 1.0, this fixes it.
-        
-        final_reward = float(reward)
-        if final_reward <= 0.0:
-            final_reward = 0.0 + EPSILON
-        elif final_reward >= 1.0:
-            final_reward = 1.0 - EPSILON
+        # --- UNIVERSAL CLAMPING LOGIC ---
+        # Use universal clamp to ensure strict (0, 1) range.
+        final_reward = clamp_score(reward)
 
         info = {"reason": reason, "steps": self.steps, "current_step": self.current_step, "total_reward": self.total_reward, "internal_state": self.internal_state}
         

@@ -1,73 +1,69 @@
 from typing import Tuple, Dict, Any
 from models import Email, Action
 
-# EPSILON is a tiny number to ensure strict inequality (0 < score < 1)
-EPSILON = 1e-9 
+# UNIVERSAL CLAMP - Use this everywhere
+UNIVERSAL_EPSILON = 1e-9
 
-def safe_score(score):
+def clamp_score(value):
     """
-    NUCLEAR FIX: Forces score strictly between 0 and 1.
-    If score is >= 1.0, this function mathematically reduces it.
+    Forces any number to be strictly between 0 and 1.
+    If input is 1.0, output is 0.999999999.
+    If input is 0.0, output is 0.000000001.
     """
     try:
-        score = float(score)
+        val = float(value)
     except:
         return 0.5
     
-    # If score is exactly 0.0 or negative, nudge it up
-    if score <= 0.0:
-        return 0.0 + EPSILON
-    
-    # If score is 1.0 or higher, we FORCE it down.
-    # 1.0 - 1.0 = 0.0 -> which becomes EPSILON.
-    # 1.5 - 1.0 = 0.5.
-    if score >= 1.0:
-        return (1.0 - score) + EPSILON
-
-    return score
+    # Aggressive clamping to prevent ANY edge case
+    if val <= 0.0:
+        return 0.0 + UNIVERSAL_EPSILON
+    if val >= 1.0:
+        return 1.0 - UNIVERSAL_EPSILON
+    return val
 
 # Renamed functions to force cache refresh in the evaluation system
 def grade_easy_v2(email: Email, action: Action, internal_state: Dict[str, Any]) -> Tuple[float, str]:
     """Easy task: Classify email priority correctly"""
     if action.action_type != "classify":
-        return safe_score(0.01), "wrong action type"
+        return clamp_score(0.01), "wrong action type"
     
     email_id = email.email_id
     if email_id not in internal_state.get("classified_emails", []):
-        return safe_score(0.01), "email not marked as classified in internal state"
+        return clamp_score(0.01), "email not marked as classified in internal state"
     
     expected = email.expected_priority
     actual = action.content.lower()
     
     if actual == expected:
-        return safe_score(0.99), f"correct priority: {expected}"
+        return clamp_score(0.99), f"correct priority: {expected}"
     elif expected in actual or actual in expected:
-        return safe_score(0.5), f"partial match: {actual} vs {expected}"
+        return clamp_score(0.5), f"partial match: {actual} vs {expected}"
     else:
-        return safe_score(0.01), f"wrong priority: {actual} vs {expected}"
+        return clamp_score(0.01), f"wrong priority: {actual} vs {expected}"
 
 def grade_medium_v2(email: Email, action: Action, internal_state: Dict[str, Any]) -> Tuple[float, str]:
     """Medium task: Generate appropriate reply"""
     if action.action_type != "reply":
-        return safe_score(0.01), "wrong action type"
+        return clamp_score(0.01), "wrong action type"
     
     email_id = email.email_id
     if email_id not in internal_state.get("replied_emails", []):
-        return safe_score(0.01), "email not marked as replied in internal state"
+        return clamp_score(0.01), "email not marked as replied in internal state"
     
     reply = action.content.lower()
     subject = email.subject.lower()
     
     if "server down" in subject and any(word in reply for word in ["investigating", "working", "update", "30 minutes"]):
-        return safe_score(0.99), "appropriate server issue response"
+        return clamp_score(0.99), "appropriate server issue response"
     elif "invoice" in subject and any(word in reply for word in ["invoice", "details", "clarification", "end of day"]):
-        return safe_score(0.99), "appropriate invoice response"
+        return clamp_score(0.99), "appropriate invoice response"
     elif "bug" in subject and any(word in reply for word in ["logged", "development", "sprint", "progress"]):
-        return safe_score(0.99), "appropriate bug report response"
+        return clamp_score(0.99), "appropriate bug report response"
     elif len(reply) > 20 and any(word in reply for word in ["hello", "thank", "working", "update"]):
-        return safe_score(0.5), "generic but professional response"
+        return clamp_score(0.5), "generic but professional response"
     else:
-        return safe_score(0.01), "inappropriate or insufficient response"
+        return clamp_score(0.01), "inappropriate or insufficient response"
 
 def grade_hard_v2(email: Email, action: Action, internal_state: Dict[str, Any]) -> Tuple[float, str]:
     """Hard task: Multi-step workflow with dependency checking"""
@@ -162,8 +158,8 @@ def grade_hard_v2(email: Email, action: Action, internal_state: Dict[str, Any]) 
     # Sum is at most 0.99
     total_score = step1_score + step2_score + step3_score
     
-    # Apply safe_score ONLY once at the end
-    final_score = safe_score(total_score)
+    # Apply clamp_score ONLY once at the end
+    final_score = clamp_score(total_score)
     
     combined_reason = f"Step1({step1_score:.2f}): {step1_reason} | Step2({step2_score:.2f}): {step2_reason} | Step3({step3_score:.2f}): {step3_reason}"
     
